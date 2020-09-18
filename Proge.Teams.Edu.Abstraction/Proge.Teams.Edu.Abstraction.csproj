@@ -8,6 +8,7 @@
     <Company>Proge-Software</Company>
     <PackageDescription>Base project for Teams integration</PackageDescription>
     <RepositoryUrl>https://github.com/proge-software/proge-teams-edu</RepositoryUrl>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
   </PropertyGroup>
 
   <ItemGroup>
