@@ -1,6 +1,9 @@
 # Proge-software Teams Connector powered by Microsoft Graph API
 
 [![NuGet Version](https://buildstats.info/nuget/Proge.Teams.Edu.Abstraction)](https://www.nuget.org/packages/Proge.Teams.Edu.Abstraction/)
+[![NuGet Version](https://buildstats.info/nuget/Proge.Teams.Edu.GraphApi)](https://www.nuget.org/packages/Proge.Teams.Edu.GraphApi/)
+[![NuGet Version](https://buildstats.info/nuget/Proge.Teams.Edu.Esse3)](https://www.nuget.org/packages/Proge.Teams.Edu.Esse3/)
+[![NuGet Version](https://buildstats.info/nuget/Proge.Teams.Edu.DAL)](https://www.nuget.org/packages/Proge.Teams.Edu.DAL/)
 
 
 Integrate Teams and its Education related capabilities in your application 
