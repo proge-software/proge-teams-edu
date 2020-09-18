@@ -12,8 +12,20 @@ The Proge-Software Teams Connector targets .NetStandard 2.0
 
 To install the client library via NuGet:
 
-* Search for `Proge.Teams.Edu.Abstraction` in the NuGet Library, or
-* Type `Install-Package Proge.Teams.Edu.Abstraction` into the Package Manager Console.
+Search in the NuGet Library for 
+* `Proge.Teams.Edu.Abstraction` [required]
+* `Proge.Teams.Edu.GraphApi` [required]
+* `Proge.Teams.Edu.Esse3` [optional]
+* `Proge.Teams.Edu.DAL` [optional]
+
+or type 
+
+* `Install-Package Proge.Teams.Edu.Abstraction` [required]
+* `Proge.Teams.Edu.GraphApi` [required]
+* `Proge.Teams.Edu.Esse3` [optional]
+* `Install-Package Proge.Teams.Edu.DAL` [optional]
+
+into the Package Manager Console.
 
 ## Getting started
 
