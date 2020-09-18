@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netstandard2.0</TargetFramework>
+    <LangVersion>8.0</LangVersion>    
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\Proge.Teams.Edu.Abstraction\Proge.Teams.Edu.Abstraction.csproj" />
+    <ProjectReference Include="..\..\src\Proge.Teams.Edu.Abstraction\Proge.Teams.Edu.Abstraction.csproj" />
+    <ProjectReference Include="..\..\src\Proge.Teams.Edu.DAL\Proge.Teams.Edu.DAL.csproj" />
+    <ProjectReference Include="..\..\src\Proge.Teams.Edu.GraphApi\Proge.Teams.Edu.GraphApi.csproj" />
+  </ItemGroup>
+
+</Project>
