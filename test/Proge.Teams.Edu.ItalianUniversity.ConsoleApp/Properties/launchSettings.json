@@ -1,0 +1,10 @@
+{
+  "profiles": {
+    "Proge.Teams.Edu.ItalianUniversity.ConsoleApp": {
+      "commandName": "Project"
+    },
+    "Docker": {
+      "commandName": "Docker"
+    }
+  }
+}
