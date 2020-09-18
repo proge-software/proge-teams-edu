@@ -1,0 +1,13 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netstandard2.0</TargetFramework>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Proge.Teams.Edu.Abstraction\Proge.Teams.Edu.Abstraction.csproj" />
+    <ProjectReference Include="..\Proge.Teams.Edu.DAL\Proge.Teams.Edu.DAL.csproj" />
+    <ProjectReference Include="..\Proge.Teams.Edu.GraphApi\Proge.Teams.Edu.GraphApi.csproj" />
+  </ItemGroup>
+
+</Project>
