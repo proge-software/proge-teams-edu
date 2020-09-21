@@ -59,23 +59,23 @@ namespace Proge.Teams.Edu.DAL.Repositories
 
         public async Task<Team> InsertOrUpdate(IEducationalClassTeam eduClass)
         {
-            var userInGroup = eduClass.Owners.Concat(eduClass.Members);
-            var userInGroupId = userInGroup.Select(a=> new Guid(a.AzureAdId));
-            var userInDb = await _dbContext.Members.Where(a => userInGroupId.Contains(a.MemberId)).ToListAsync();
-            userInGroup.Where(a => !userInDb.Select(b => b.MemberId).Contains(Guid.Parse(a.AzureAdId)))
-                .ToList()
-                .ForEach(a => _dbContext.Add(new Member() { UserPrincipalName = a.UserPrincipalName, MemberId = Guid.Parse(a.AzureAdId), TenantId = eduClass.TenantId }));            
+            //var userInGroup = eduClass.Owners.Concat(eduClass.Members);
+            //var userInGroupId = userInGroup.Select(a=> new Guid(a.AzureAdId));
+            //var userInDb = await _dbContext.Members.Where(a => userInGroupId.Contains(a.MemberId)).ToListAsync();
+            //userInGroup.Where(a => !userInDb.Select(b => b.MemberId).Contains(Guid.Parse(a.AzureAdId)))
+            //    .ToList()
+            //    .ForEach(a => _dbContext.Add(new Member() { UserPrincipalName = a.UserPrincipalName, MemberId = Guid.Parse(a.AzureAdId), TenantId = eduClass.TenantId }));            
             
             var team = await this._defaultCollection<Team>()
                 .Include(a => a.TeamsUsers)
                 .Where(a => a.TeamsId == eduClass.Id)
                 .FirstOrDefaultAsync();
 
-            var users = eduClass.Owners
-                .Select(a => new TeamMember() { MemberId = Guid.Parse(a.AzureAdId) , MemberType = MemberType.Owner})
-                .Concat(eduClass.Members
-                .Select(a => new TeamMember() { MemberId = Guid.Parse(a.AzureAdId) ,  MemberType = MemberType.Member}))
-                .ToList();
+            //var users = eduClass.Owners
+            //    .Select(a => new TeamMember() { MemberId = Guid.Parse(a.AzureAdId) , MemberType = MemberType.Owner})
+            //    .Concat(eduClass.Members
+            //    .Select(a => new TeamMember() { MemberId = Guid.Parse(a.AzureAdId) ,  MemberType = MemberType.Member}))
+            //    .ToList();
 
             if (team == null)
             {
@@ -89,7 +89,7 @@ namespace Proge.Teams.Edu.DAL.Repositories
                     InternalId = eduClass.InternalId,
                     TenantId = eduClass.TenantId,
                     JoinCode = eduClass.JoinCode,
-                    TeamsUsers = users,
+                    //TeamsUsers = users,
                     JoinUrl = eduClass.JoinUrl,
                     TeamType = eduClass.TeamType,
                     IsMembershipLimitedToOwners = eduClass.IsMembershipLimitedToOwners.Value
@@ -109,21 +109,24 @@ namespace Proge.Teams.Edu.DAL.Repositories
                 team.TeamType = eduClass.TeamType;
                 team.IsMembershipLimitedToOwners = eduClass.IsMembershipLimitedToOwners.Value;
                 
-                var newIds = users == null || !users.Any() ? Enumerable.Empty<TeamMember>() : users;
-                var existingIds = team.TeamsUsers == null || !team.TeamsUsers.Any() ? Enumerable.Empty<TeamMember>() : team.TeamsUsers;
+                //var newIds = users == null || !users.Any() ? Enumerable.Empty<TeamMember>() : users;
+                //var existingIds = team.TeamsUsers == null || !team.TeamsUsers.Any() ? Enumerable.Empty<TeamMember>() : team.TeamsUsers;
 
-                var removedOwners = existingIds.Except(newIds).ToList();
-                var addedOwners = newIds.Except(existingIds).ToList();
+                ////var removedOwners = existingIds.Except(newIds).ToList();
+                ////var addedOwners = newIds.Except(existingIds).ToList();
 
-                foreach (var id in removedOwners)
-                {
-                    team.TeamsUsers.Remove(id);
-                }
+                //var removedOwners = existingIds.Where(x => !newIds.Any(y => y.MemberId == x.MemberId)).ToList();
+                //var addedOwners = newIds.Where(x => !existingIds.Any(y => y.MemberId == x.MemberId)).ToList();
 
-                foreach (var id in addedOwners)
-                {
-                    team.TeamsUsers.Add(id);
-                }
+                //foreach (var id in removedOwners)
+                //{
+                //    team.TeamsUsers.Remove(id);
+                //}
+
+                //foreach (var id in addedOwners)
+                //{
+                //    team.TeamsUsers.Add(id);
+                //}
 
             }
             return team;

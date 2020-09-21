@@ -38,9 +38,8 @@ namespace Proge.Teams.Edu.GraphApi
         }
 
         /// <summary>
-        /// Method ConnectAsApplication: not used
+        /// Establish the connection.
         /// </summary>
-        /// <param name="config"></param>
         /// <returns></returns>
         public async Task ConnectAsApplication()
         {
@@ -59,6 +58,11 @@ namespace Proge.Teams.Edu.GraphApi
             }
         }
 
+        /// <summary>
+        /// Get the properties and relationships of the specified team.
+        /// </summary>
+        /// <param name="id">Id of the team.</param>
+        /// <returns>Microsoft.Graph.Team object.</returns>
         public async Task<Beta.Team> GetTeam(string id)
         {
             var resGroup = await Retry.Do(async () => await graphClient.Teams[$"{id}"]
@@ -67,7 +71,11 @@ namespace Proge.Teams.Edu.GraphApi
             return resGroup;
         }
 
-
+        /// <summary>
+        /// Build a team from an existing group.
+        /// </summary>
+        /// <param name="groupId">Id of the existing group.</param>
+        /// <returns>Microsoft.Graph.Team object.</returns>
         public Beta.Team DefaultTeamFactory(string groupId)
         {
             return new Beta.Team

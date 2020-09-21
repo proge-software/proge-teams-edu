@@ -40,9 +40,8 @@ namespace Proge.Teams.Edu.GraphApi
         }
 
         /// <summary>
-        /// Method ConnectAsApplication: not used
+        /// Establish the connection.
         /// </summary>
-        /// <param name="config"></param>
         /// <returns></returns>
         public async Task ConnectAsApplication()
         {
@@ -61,6 +60,10 @@ namespace Proge.Teams.Edu.GraphApi
             }
         }
 
+        /// <summary>
+        /// List all the groups in an organization, including but not limited to Microsoft 365 groups.
+        /// </summary>
+        /// <returns>Collection of Microsoft.Graph.Group objects.</returns>
         public async Task<IGraphServiceGroupsCollectionPage> ListGroups()
         {
             var groups = await graphClient.Groups
@@ -70,6 +73,11 @@ namespace Proge.Teams.Edu.GraphApi
             return groups;
         }
 
+        /// <summary>
+        /// Get some user's data (id, userPrincipalName, jobTitle, officeLocation, department, mail and assignedLicenses) by his principal name.
+        /// </summary>
+        /// <param name="mail">User's principal name.</param>
+        /// <returns>A Microsoft.Graph.User object.</returns>
         public async Task<User> GetUserIdByPrincipalName(string mail)
         {
             string filter = $"userPrincipalName eq '{mail}'";
@@ -80,12 +88,16 @@ namespace Proge.Teams.Edu.GraphApi
                 .Select("id,userPrincipalName,jobTitle,officeLocation,department,mail,assignedLicenses")
                 .GetAsync();
 
-
-            //Fare un check sulle assignedLiceses perchè solo gli A1+ hanno Teams
+            // Check assignedLiceses as A1+ only have Teams
 
             return users.FirstOrDefault();
         }
 
+        /// <summary>
+        /// Get some user's data (userPrincipalName, mail and Azure AD id) by his principal name.
+        /// </summary>
+        /// <param name="userPrincipalName">User's principal name.</param>
+        /// <returns>A Proge.Teams.Edu.GraphApi.Models.TeamMember object.</returns>
         public async Task<ITeamMember> GetTeamMemberByPrincipalName(string userPrincipalName)
         {
             string filter = $"userPrincipalName eq '{userPrincipalName}'";
@@ -98,8 +110,7 @@ namespace Proge.Teams.Edu.GraphApi
                        .Select("id,userPrincipalName,jobTitle,officeLocation,department,mail,assignedLicenses")
                        .GetAsync();
 
-
-                //Fare un check sulle assignedLiceses perchè solo gli A1+ hanno Teams
+                // Check assignedLiceses as A1+ only have Teams
                 var user = users.FirstOrDefault();
                 if (user == null)
                 {
@@ -121,6 +132,13 @@ namespace Proge.Teams.Edu.GraphApi
             }
         }
 
+        /// <summary>
+        /// Add a collection of users to the group's owners.
+        /// </summary>
+        /// <param name="groupid">Id of the group.</param>
+        /// <param name="ownerIds">Collection of the users' ids.</param>
+        /// <param name="ownersInGroup">Collection of Microsoft.Graph.DirectoryObject users (each with only id valued) that are already owner of the group. Optional.</param>
+        /// <returns></returns>
         public async Task AddGroupOwners(string groupid, IEnumerable<string> ownerIds, IEnumerable<DirectoryObject> ownersInGroup = null)
         {
             foreach (var item in ownerIds.Distinct())
@@ -129,6 +147,13 @@ namespace Proge.Teams.Edu.GraphApi
             }
         }
 
+        /// <summary>
+        /// Add a user to the group's owners.
+        /// </summary>
+        /// <param name="groupid">Id of the group.</param>
+        /// <param name="id">Id of the user.</param>
+        /// <param name="ownersInGroup">Collection of Microsoft.Graph.DirectoryObject users (each with only id valued) that are already owner of the group. Optional.</param>
+        /// <returns></returns>
         public async Task AddGroupOwner(string groupid, string id, IEnumerable<DirectoryObject> ownersInGroup = null)
         {
             if (ownersInGroup != null && ownersInGroup.Any(a => a.Id == id))
@@ -138,29 +163,47 @@ namespace Proge.Teams.Edu.GraphApi
             await Retry.Do<Task>(async () => await graphClient.Groups[$"{groupid}"].Owners.References
                .Request()
                .AddAsync(directoryObject), TimeSpan.FromSeconds(_authenticationConfig.RetryDelay));
-            ;
         }
 
-        public async Task AddGroupMembers(string groupid, IEnumerable<string> memeberIds, IEnumerable<DirectoryObject> ownersInGroup = null)
+        /// <summary>
+        /// Add a collection of users to the group's members.
+        /// </summary>
+        /// <param name="groupid">Id of the group.</param>
+        /// <param name="memeberIds">Collection of the users' ids.</param>
+        /// <param name="membersInGroup">Collection of Microsoft.Graph.DirectoryObject users (each with only id valued) that are already members of the group. Optional.</param>
+        /// <returns></returns>
+        public async Task AddGroupMembers(string groupid, IEnumerable<string> memeberIds, IEnumerable<DirectoryObject> membersInGroup = null)
         {
             foreach (var item in memeberIds.Distinct())
             {
-                await AddGroupMember(groupid, item, ownersInGroup);
+                await AddGroupMember(groupid, item, membersInGroup);
             }
         }
 
-        public async Task AddGroupMember(string groupid, string id, IEnumerable<DirectoryObject> ownersInGroup = null)
+        /// <summary>
+        /// Add a user to the group's members.
+        /// </summary>
+        /// <param name="groupid">Id of the group.</param>
+        /// <param name="id">Id of the user.</param>
+        /// <param name="membersInGroup">Collection of Microsoft.Graph.DirectoryObject users (each with only id valued) that are already members of the group. Optional.</param>
+        /// <returns></returns>
+        public async Task AddGroupMember(string groupid, string id, IEnumerable<DirectoryObject> membersInGroup = null)
         {
-            if (ownersInGroup != null && ownersInGroup.Any(a => a.Id == id))
+            if (membersInGroup != null && membersInGroup.Any(a => a.Id == id))
                 return;
 
             var directoryObject = new DirectoryObject { Id = id };
             await Retry.Do<Task>(async () => await graphClient.Groups[$"{groupid}"].Members.References
                .Request()
                .AddAsync(directoryObject), TimeSpan.FromSeconds(_authenticationConfig.RetryDelay));
-            ;
         }
 
+        /// <summary>
+        /// Remove a member from a group.
+        /// </summary>
+        /// <param name="groupId">Id of the group.</param>
+        /// <param name="azureUserId">Azure id of the user to remove.</param>
+        /// <returns></returns>
         public async Task RemoveGroupMember(string groupId, string azureUserId)
         {
             await graphClient.Groups[$"{groupId}"].Members[$"{azureUserId}"].Reference
@@ -168,6 +211,12 @@ namespace Proge.Teams.Edu.GraphApi
                 .DeleteAsync();
         }
 
+        /// <summary>
+        /// Remove an owner from a Microsoft 365 group, a security group, or a mail-enabled security group.
+        /// </summary>
+        /// <param name="groupId">Id of the group.</param>
+        /// <param name="azureUserId">Azure id of the user to remove.</param>
+        /// <returns></returns>
         public async Task RemoveGroupOwner(string groupId, string azureUserId)
         {
             await graphClient.Groups[$"{groupId}"].Owners[$"{azureUserId}"].Reference
@@ -175,6 +224,13 @@ namespace Proge.Teams.Edu.GraphApi
                 .DeleteAsync();
         }
 
+        /// <summary>
+        /// Replace the owners of a group.
+        /// </summary>
+        /// <param name="groupid">Id of the group.</param>
+        /// <param name="newOwners">Collection of Proge.Teams.Edu.Abstraction.ITeamMember users (each with AzureAdId valued only) that replaces the existing owners list of the group.</param>
+        /// <param name="existingOwners">Currently existing owners list of the group (collection of Microsoft.Graph.DirectoryObject, each with id valued only).</param>
+        /// <returns></returns>
         public async Task UpdateGroupOwners(string groupid, IEnumerable<ITeamMember> newOwners, IEnumerable<DirectoryObject> existingOwners)
         {
             var newIds = newOwners == null || !newOwners.Any() ? Enumerable.Empty<string>() : newOwners.Select(a => a.AzureAdId);
@@ -194,6 +250,13 @@ namespace Proge.Teams.Edu.GraphApi
             }
         }
 
+        /// <summary>
+        /// Replace the members of a group.
+        /// </summary>
+        /// <param name="groupid">Id of the group.</param>
+        /// <param name="newMembers">Collection of Proge.Teams.Edu.Abstraction.ITeamMember users (each with AzureAdId valued only) that replaces the existing members list of the group.</param>
+        /// <param name="existingMembers">Currently existing members list of the group (collection of Microsoft.Graph.DirectoryObject, each with id valued only).</param>
+        /// <returns></returns>
         public async Task UpdateGroupMembers(string groupid, IEnumerable<ITeamMember> newMembers, IEnumerable<DirectoryObject> existingMembers)
         {
             var newIds = newMembers == null || !newMembers.Any() ? Enumerable.Empty<string>() : newMembers.Select(a => a.AzureAdId);
@@ -213,6 +276,12 @@ namespace Proge.Teams.Edu.GraphApi
             }
         }
 
+        /// <summary>
+        /// Create a new team under a group (the group must have a least one owner).
+        /// </summary>
+        /// <param name="groupId">Id of the group.</param>
+        /// <param name="team">A Microsoft.Graph.Team object that represent the team to create.</param>
+        /// <returns>The new team (Microsoft.Graph.Team object).</returns>
         public async Task<Team> CreateTeam(string groupId, Team team)
         {
             var resTeam = await graphClient.Groups[$"{groupId}"].Team
@@ -221,6 +290,12 @@ namespace Proge.Teams.Edu.GraphApi
             return resTeam;
         }
 
+        /// <summary>
+        /// Update the properties of the specified team.
+        /// </summary>
+        /// <param name="groupId">Id of the group.</param>
+        /// <param name="team">A Microsoft.Graph.Team object with the new values for relevant fields that should be updated.</param>
+        /// <returns></returns>
         public async Task<Team> UpdateTeam(string groupId, Team team)
         {
             var resTeam = await graphClient.Groups[$"{groupId}"].Team
@@ -229,6 +304,12 @@ namespace Proge.Teams.Edu.GraphApi
             return resTeam;
         }
 
+        /// <summary>
+        /// Create a new channel in the team of a group.
+        /// </summary>
+        /// <param name="groupId">Id of the group.</param>
+        /// <param name="channel">The Microsoft.Graph.Channel object to create.</param>
+        /// <returns>The new channel (Microsoft.Graph.Channel object).</returns>
         public async Task<Channel> CreateChannel(string groupId, Channel channel)
         {
             var resChannel = await graphClient.Groups[$"{groupId}"].Team.Channels
@@ -237,6 +318,13 @@ namespace Proge.Teams.Edu.GraphApi
             return resChannel;
         }
 
+        /// <summary>
+        /// Update a channel of the team of a group.
+        /// </summary>
+        /// <param name="groupId">Id of the group.</param>
+        /// <param name="source">The channel (Microsoft.Graph.Channel object with id valued only) to update.</param>
+        /// <param name="update">A Microsoft.Graph.Channel object with the new values for relevant fields that should be updated.</param>
+        /// <returns></returns>
         public async Task<Channel> UpdateChannel(string groupId, Channel source, Channel update)
         {
             if (source.DisplayName == update.DisplayName)
@@ -248,6 +336,12 @@ namespace Proge.Teams.Edu.GraphApi
             return resChannel;
         }
 
+        /// <summary>
+        /// Delete a channel of the team of a group.
+        /// </summary>
+        /// <param name="groupId">Id of the group.</param>
+        /// <param name="chanId">Id of the channel to delete.</param>
+        /// <returns></returns>
         public async Task DeleteChannel(string groupId, string chanId)
         {
             await graphClient.Groups[$"{groupId}"].Team.Channels[$"{chanId}"]
@@ -255,6 +349,11 @@ namespace Proge.Teams.Edu.GraphApi
                 .DeleteAsync();
         }
 
+        /// <summary>
+        /// Create a new group.
+        /// </summary>
+        /// <param name="group">The Microsoft.Graph.Group object to create.</param>
+        /// <returns>The new group created (Microsoft.Graph.Group object).</returns>
         public async Task<Group> CreateGroup(Group group)
         {
             var resGroup = await graphClient.Groups
@@ -263,6 +362,11 @@ namespace Proge.Teams.Edu.GraphApi
             return resGroup;
         }
 
+        /// <summary>
+        /// Create a new education class.
+        /// </summary>
+        /// <param name="group">The Microsoft.Graph.EducationClass object to create.</param>
+        /// <returns>The new Microsoft.Graph.EducationClass object created.</returns>
         public async Task<EducationClass> CreateEducationClass(EducationClass group)
         {
             return await Retry.Do(async () => await graphClient.Education.Classes
@@ -270,6 +374,11 @@ namespace Proge.Teams.Edu.GraphApi
                 .AddAsync(group), TimeSpan.FromSeconds(_authenticationConfig.RetryDelay));
         }
 
+        /// <summary>
+        /// Create a new team.
+        /// </summary>
+        /// <param name="team">The Microsoft.Graph.Team object to create.</param>
+        /// <returns>The Microsoft.Graph.Team object created.</returns>
         public async Task<Team> CreateTeam(Team team)
         {
             return await Retry.Do(async () => await graphClient.Teams
@@ -277,6 +386,13 @@ namespace Proge.Teams.Edu.GraphApi
                 .AddAsync(team), TimeSpan.FromSeconds(_authenticationConfig.RetryDelay));
         }
 
+        /// <summary>
+        /// Adds (pins) a tab to the specified channel within a team.
+        /// </summary>
+        /// <param name="groupId">Id of the team.</param>
+        /// <param name="chanId">Id of the channel.</param>
+        /// <param name="tab">The Microsoft.Graph.TeamsTab to add.</param>
+        /// <returns>The new Microsoft.Graph.TeamsTab object added to the channel.</returns>
         public async Task<TeamsTab> CreateWebTab(string groupId, string chanId, TeamsTab tab)
         {
             return await Retry.Do(async () => await graphClient.Teams[$"{groupId}"]
@@ -286,6 +402,14 @@ namespace Proge.Teams.Edu.GraphApi
                .AddAsync(tab), TimeSpan.FromSeconds(_authenticationConfig.RetryDelay));
         }
 
+        /// <summary>
+        /// Update the properties of the specified tab.
+        /// </summary>
+        /// <param name="groupId">Id of the team.</param>
+        /// <param name="chanId">Id of the channel.</param>
+        /// <param name="tabId">Id of the tab.</param>
+        /// <param name="tab">A Microsoft.Graph.TeamsTab object with the new values for relevant fields that should be updated.</param>
+        /// <returns></returns>
         public async Task<TeamsTab> UpdateWebTab(string groupId, string chanId, string tabId, TeamsTab tab)
         {
             tab.ODataBind = null;
@@ -296,6 +420,11 @@ namespace Proge.Teams.Edu.GraphApi
                 .UpdateAsync(tab), TimeSpan.FromSeconds(_authenticationConfig.RetryDelay));
         }
 
+        /// <summary>
+        /// Get a group by id.
+        /// </summary>
+        /// <param name="id">Id of the group.</param>
+        /// <returns>The Microsoft.Graph.Group object.</returns>
         public async Task<Group> GetGroup(string id)
         {
             string filter = $"id eq '{id}'";
@@ -306,6 +435,11 @@ namespace Proge.Teams.Edu.GraphApi
             return resGroup.FirstOrDefault();
         }
 
+        /// <summary>
+        /// Archive the specified team.
+        /// </summary>
+        /// <param name="id">Id of the team.</param>
+        /// <returns></returns>
         public async Task ArchiveTeam(string id)
         {
             try
@@ -322,6 +456,11 @@ namespace Proge.Teams.Edu.GraphApi
             }
         }
 
+        /// <summary>
+        /// Get a team by id.
+        /// </summary>
+        /// <param name="id">Id of the team.</param>
+        /// <returns>The Microsoft.Graph.Team object.</returns>
         public async Task<Team> GetTeam(string id)
         {
             var resGroup = await Retry.Do(async () => await graphClient.Teams[$"{id}"]
@@ -330,7 +469,12 @@ namespace Proge.Teams.Edu.GraphApi
             return resGroup;
         }
 
-        public async Task<IEnumerable<DirectoryObject>> GetTeamMember(string id)
+        /// <summary>
+        /// Get the members of a team.
+        /// </summary>
+        /// <param name="id">Id of the team.</param>
+        /// <returns></returns>
+        public async Task<IEnumerable<DirectoryObject>> GetTeamMembers(string id)
         {
             var allClasses = new List<DirectoryObject>();
 
@@ -354,6 +498,11 @@ namespace Proge.Teams.Edu.GraphApi
             return allClasses;
         }
 
+        /// <summary>
+        /// Get an education class with group and team.
+        /// </summary>
+        /// <param name="id">Id of the group/education class.</param>
+        /// <returns>The Microsoft.Graph.EducationClass object.</returns>
         public async Task<EducationClass> GetEducationClassWGroupWTeam(string id)
         {
             var result = await GetEducationClass(id);
@@ -374,7 +523,7 @@ namespace Proge.Teams.Edu.GraphApi
                 _logger.LogWarning($"Team non trovato nel gruppo {id}");
             }            
 
-            var members = await GetTeamMember(id);
+            var members = await GetTeamMembers(id);
             result.Group.Members.Clear();
             members.ToList().ForEach(a => result.Group.Members.Add(a));
 
@@ -387,6 +536,11 @@ namespace Proge.Teams.Edu.GraphApi
             return result;
         }
 
+        /// <summary>
+        /// Get a team with its channels and channels' tabs.
+        /// </summary>
+        /// <param name="id">Id of the team.</param>
+        /// <returns>The Microsoft.Graph.Team object.</returns>
         public async Task<Team> GetTeamWChannelsWTabs(string id)
         {
             var result = await GetTeam(id);
@@ -408,6 +562,10 @@ namespace Proge.Teams.Edu.GraphApi
             return result;
         }
 
+        /// <summary>
+        /// Get the list of all class objects.
+        /// </summary>
+        /// <returns>The collection of Microsoft.Graph.EducationClass objects.</returns>
         public async Task<IEnumerable<EducationClass>> GetEducationClasses()
         {
             var allClasses = new List<EducationClass>();
@@ -431,6 +589,11 @@ namespace Proge.Teams.Edu.GraphApi
             return allClasses;
         }
 
+        /// <summary>
+        /// Get a class.
+        /// </summary>
+        /// <param name="id">Id of the class.</param>
+        /// <returns>The Microsoft.Graph.EducationClass object.</returns>
         public async Task<EducationClass> GetEducationClass(string id)
         {
             return await graphClient.Education.Classes[$"{id}"]
@@ -438,6 +601,12 @@ namespace Proge.Teams.Edu.GraphApi
              .GetAsync();
         }
 
+        /// <summary>
+        /// Update the properties of a class.
+        /// </summary>
+        /// <param name="id">Id of the class.</param>
+        /// <param name="educationClass">A Microsoft.Graph.EducationClass object with the new values for relevant fields that should be updated.</param>
+        /// <returns>The updated Microsoft.Graph.EducationClass object.</returns>
         public async Task<EducationClass> UpdateEducationClass(string id, EducationClass educationClass)
         {
             return await graphClient.Education.Classes[$"{id}"]
@@ -445,6 +614,11 @@ namespace Proge.Teams.Edu.GraphApi
                .UpdateAsync(educationClass);
         }
 
+        /// <summary>
+        /// Delete a class.
+        /// </summary>
+        /// <param name="id">Id of the class to delete.</param>
+        /// <returns></returns>
         public async Task DeleteEducationClass(string id)
         {
             await graphClient.Education.Classes[$"{id}"]
@@ -452,6 +626,11 @@ namespace Proge.Teams.Edu.GraphApi
              .DeleteAsync();
         }
 
+        /// <summary>
+        /// Build a Microsoft.Graph.EducationClass object from a Proge.Teams.Edu.Abstraction.IEducationalClassTeam one.
+        /// </summary>
+        /// <param name="educationalClassTeam">The Proge.Teams.Edu.Abstraction.IEducationalClassTeam object.</param>
+        /// <returns>The Microsoft.Graph.EducationClass object.</returns>
         public EducationClass DefaultEducationalClassFactory(IEducationalClassTeam educationalClassTeam)
         {
             return new EducationClass
@@ -466,6 +645,12 @@ namespace Proge.Teams.Edu.GraphApi
             };
         }
 
+        /// <summary>
+        /// Build a Microsoft.Graph.TeamsTab object.
+        /// </summary>
+        /// <param name="tabName">Name of the tab.</param>
+        /// <param name="tabUrl">Web site url and content url of the tab.</param>
+        /// <returns>The Microsoft.Graph.TeamsTab object.</returns>
         public TeamsTab DefaultWebTab(string tabName, string tabUrl)
         {
             return new TeamsTab()
@@ -483,6 +668,12 @@ namespace Proge.Teams.Edu.GraphApi
             };
         }
 
+        /// <summary>
+        /// Build a Microsoft.Graph.Channel object.
+        /// </summary>
+        /// <param name="displayName">Display name of the channel.</param>
+        /// <param name="description">Description of the channel.</param>
+        /// <returns>The Microsoft.Graph.Channel object.</returns>
         public Channel DefaultChannelFactory(string displayName, string description = null)
         {
             return new Channel
@@ -492,6 +683,11 @@ namespace Proge.Teams.Edu.GraphApi
             };
         }
 
+        /// <summary>
+        /// Build a Microsoft.Graph.Team object for an existing group.
+        /// </summary>
+        /// <param name="groupId">An existing group id.</param>
+        /// <returns>The Microsoft.Graph.Team object.</returns>
         public Team DefaultTeamFactory(string groupId)
         {
             return new Team
@@ -534,7 +730,7 @@ namespace Proge.Teams.Edu.GraphApi
         }
 
         /// <summary>
-        /// NOT WORKING
+        /// GetUsersIdByPrincipalName: NOT WORKING
         /// </summary>
         /// <param name="mails"></param>
         /// <returns></returns>
@@ -558,11 +754,16 @@ namespace Proge.Teams.Edu.GraphApi
                 .Select("id,userPrincipalName,jobTitle,officeLocation,department,mail,assignedLicenses")
                 .GetAsync();
 
-            //Fare un check sulle assignedLiceses perchè solo gli A1+ hanno Teams
+            // Check assignedLiceses as A1+ only have Teams
 
             return users;
         }
 
+        /// <summary>
+        /// Archive and delete classes according to the starting value of the external id.
+        /// </summary>
+        /// <param name="externalIdPrefix">External id starting value of the classes to archive and delete.</param>
+        /// <returns></returns>
         public async Task DeleteEducationalClassesByExternalIdPrefix(string externalIdPrefix)
         {
             var classes = await GetEducationClasses();
@@ -576,6 +777,12 @@ namespace Proge.Teams.Edu.GraphApi
             await Task.WhenAll(taskArchive).ContinueWith(a => Task.WhenAll(taskDelete));
         }
 
+        /// <summary>
+        /// Get the collection of items in a Sharepoint list.
+        /// </summary>
+        /// <param name="siteId">Sharepoint site id.</param>
+        /// <param name="listName">Sharepoint list name.</param>
+        /// <returns>Collection of Sharepoint items (collection of Microsoft.Graph.ListItem).</returns>
         public async Task<IEnumerable<ListItem>> GetListItems(string siteId, string listName)
         {
             var list = await graphClient.Sites[siteId].Lists[listName].Items
@@ -584,6 +791,13 @@ namespace Proge.Teams.Edu.GraphApi
             return list;
         }
 
+        /// <summary>
+        /// Get a Sharepoint item.
+        /// </summary>
+        /// <param name="siteId">Sharepoint site id.</param>
+        /// <param name="listName">Sharepoint list name.</param>
+        /// <param name="itemId">Sharepoint item id.</param>
+        /// <returns>Sharepoint item (Microsoft.Graph.ListItem).</returns>
         public async Task<ListItem> GetListItem(string siteId, string listName, string itemId)
         {
             var list = await graphClient.Sites[siteId].Lists[listName].Items[itemId]
@@ -592,6 +806,14 @@ namespace Proge.Teams.Edu.GraphApi
             return list;
         }
 
+        /// <summary>
+        /// Get a collection of Sharepoint items by an indexed field.
+        /// </summary>
+        /// <param name="siteId">Sharepoint site id.</param>
+        /// <param name="listName">Sharepoint list name.</param>
+        /// <param name="columnId">Id of the field.</param>
+        /// <param name="value">Value of the field.</param>
+        /// <returns>Collection of Sharepoint items (collection of Microsoft.Graph.ListItem).</returns>
         public async Task<IEnumerable<ListItem>> SearchListItemByIndexedField(string siteId, string listName, string columnId, string value)
         {
             string filter = $"fields/{columnId} eq '{value}'";
@@ -602,6 +824,13 @@ namespace Proge.Teams.Edu.GraphApi
             return list;
         }
 
+        /// <summary>
+        /// Add an item in a Sharepoint list.
+        /// </summary>
+        /// <param name="siteId">Sharepoint site id.</param>
+        /// <param name="listName">Sharepoint list name.</param>
+        /// <param name="item">Sharepoint item to add.</param>
+        /// <returns>Sharepoint item (Microsoft.Graph.ListItem).</returns>
         public async Task<ListItem> AddListItem(string siteId, string listName, ListItem item)
         {
             var list = await graphClient.Sites[siteId].Lists[listName].Items
@@ -610,6 +839,14 @@ namespace Proge.Teams.Edu.GraphApi
             return list;
         }
 
+        /// <summary>
+        /// Update a Sharepoint item.
+        /// </summary>
+        /// <param name="siteId">Sharepoint site id.</param>
+        /// <param name="listName">Sharepoint list name.</param>
+        /// <param name="itemId">Sharepoint item id.</param>
+        /// <param name="item">Column values specifying the fields to update.</param>
+        /// <returns>Updated column values (Microsoft.Graph.FieldValueSet).</returns>
         public async Task<FieldValueSet> UpdateListItem(string siteId, string listName, string itemId, FieldValueSet item)
         {
             var list = await graphClient.Sites[siteId].Lists[listName].Items[itemId].Fields
@@ -618,6 +855,12 @@ namespace Proge.Teams.Edu.GraphApi
             return list;
         }
 
+        /// <summary>
+        /// Get a Sharepoint list.
+        /// </summary>
+        /// <param name="siteId">Sharepoint site id.</param>
+        /// <param name="listName">Sharepoint list name.</param>
+        /// <returns>The Sharepoint list (Microsoft.Graph.List).</returns>
         public async Task<List> GetListSite(string siteId, string listName)
         {
             var list = await graphClient.Sites[siteId].Lists[listName]
@@ -626,6 +869,11 @@ namespace Proge.Teams.Edu.GraphApi
             return list;
         }
 
+        /// <summary>
+        /// Get a Sharepoint site by uri (absolute path and dns safe host).
+        /// </summary>
+        /// <param name="uri">The site uri (with DnsSafeHost and AbsolutePath valued only).</param>
+        /// <returns>The Sharepoint site (Microsoft.Graph.Site).</returns>
         public async Task<Site> GetSiteByUri(Uri uri)
         {
             var site = await graphClient.Sites.GetByPath(uri.DnsSafeHost, uri.AbsolutePath)
@@ -634,6 +882,11 @@ namespace Proge.Teams.Edu.GraphApi
             return site;
         }
 
+        /// <summary>
+        /// Get a Sharepoint site by keyword.
+        /// </summary>
+        /// <param name="key">Keyword to search for.</param>
+        /// <returns>The Sharepoint site (Microsoft.Graph.Site).</returns>
         public async Task<IEnumerable<Site>> SearchSiteByKeywork(string key)
         {
             var queryOptions = new List<QueryOption>() { new QueryOption("search", key) };

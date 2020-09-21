@@ -89,12 +89,17 @@ namespace Proge.Teams.Edu.GraphApi
             }
         }
 
+        /// <summary>
+        /// Get join code of an existing team, or create one (if it has still not been created).
+        /// </summary>
+        /// <param name="internalTeamsId">Id of the team.</param>
+        /// <returns>The join code.</returns>
         public async Task<string> GetJoinCode(string internalTeamsId)
         {
             var requestUri = $"https://teams.microsoft.com/api/mt/part/msft/beta/teams/{internalTeamsId}/joinCode";
             using (var httpClient = new HttpClient())
             {
-                //Provo a prendere il join code se esiste
+                // Attempt to get the join code, if it already exists.
                 try
                 {
                     using (var httpRequest = new HttpRequestMessage(HttpMethod.Get, requestUri))
@@ -110,7 +115,7 @@ namespace Proge.Teams.Edu.GraphApi
                         return ret;
                     }
                 }
-                //Se non esiste provo a generarlo
+                // Attempt to create the join code, if it does not exists.
                 catch (Exception ex1)
                 {
                     try
@@ -128,16 +133,19 @@ namespace Proge.Teams.Edu.GraphApi
                             return ret;
                         }
                     }
-                    //Se non riesco a generalo, il team non è attivo
+                    // It creation attempt fails: not active team.
                     catch (Exception ex2)
                     {
                         return null;
                     }
                 }
-
             }
         }
 
+        /// <summary>
+        /// Establish the connection.
+        /// </summary>
+        /// <returns></returns>
         public async Task Connect()
         {
             await ConnectWithUnp();

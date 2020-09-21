@@ -10,7 +10,7 @@ namespace Proge.Teams.Edu.DAL.Repositories
 {
     public interface IMemberRepository
     {
-
+        
     }
 
     public class MemberRepository : Repository<TeamsEduDbContext>, IMemberRepository
@@ -38,5 +38,13 @@ namespace Proge.Teams.Edu.DAL.Repositories
                 .SingleOrDefaultAsync();
         }
 
+        public async Task<Member> GetMemberByUserPrincipalName(string userPrincipalName)
+        {
+            if (string.IsNullOrWhiteSpace(userPrincipalName))
+                return null;
+
+            return await this._defaultCollection<Member>()
+                .SingleOrDefaultAsync(m => m.UserPrincipalName == userPrincipalName);
+        }
     }
 }
