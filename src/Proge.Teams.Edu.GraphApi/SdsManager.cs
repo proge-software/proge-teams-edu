@@ -125,7 +125,7 @@ namespace Proge.Teams.Edu.GraphApi
         /// Create a request for a new school data synchronization profile in the tenant.
         /// </summary>
         /// <param name="syncProfile">Object that represents the synchronization profile to create.</param>
-        /// <returns></returns>
+        /// <returns>The new education synchronization profile (Microsoft.Graph.EducationSynchronizationProfile object).</returns>
         public async Task<Beta.EducationSynchronizationProfile> CreateEduSyncProfile(Beta.EducationSynchronizationProfile syncProfile)
         {
             try
@@ -159,7 +159,7 @@ namespace Proge.Teams.Edu.GraphApi
         /// <summary>
         /// Retrieve the collection of school data synchronization profiles in the tenant.
         /// </summary>
-        /// <returns></returns>
+        /// <returns>Collection of Microsoft.Graph.EducationSynchronizationProfile objects.</returns>
         public async Task<IEnumerable<Beta.EducationSynchronizationProfile>> GetEduSyncProfiles()
         {
             try
@@ -192,7 +192,7 @@ namespace Proge.Teams.Edu.GraphApi
         /// Retrieve a school data synchronization profile in the tenant based on the identifier.
         /// </summary>
         /// <param name="syncProfileId">Synchronization profile identifier.</param>
-        /// <returns></returns>
+        /// <returns>The education synchronization profile (Microsoft.Graph.EducationSynchronizationProfile object).</returns>
         public async Task<Beta.EducationSynchronizationProfile> GetEduSyncProfile(string syncProfileId)
         {
             try
@@ -225,7 +225,7 @@ namespace Proge.Teams.Edu.GraphApi
         /// <summary>
         /// Get the id of a sync profile by DisplayName.
         /// </summary>
-        /// <returns></returns>
+        /// <returns>The education synchronization profile id.</returns>
         public async Task<string> GetSyncProfileIdByDisplayName(string profileName)
         {
             string sId = string.Empty;
@@ -248,7 +248,7 @@ namespace Proge.Teams.Edu.GraphApi
         /// Azure blob storage for a specific school data synchronization profile in the tenant.
         /// </summary>
         /// <param name="syncProfileId">Synchronization profile identifier.</param>
-        /// <returns></returns>
+        /// <returns>The url where the csv files can be uploaded.</returns>
         public async Task<string> GetEduSyncProfileUploadURL(string syncProfileId)
         {
             try
@@ -269,16 +269,9 @@ namespace Proge.Teams.Edu.GraphApi
                     //return (false, $"{(int)response.StatusCode} {response.ReasonPhrase} {Environment.NewLine}{res}");
                     throw new Exception($"{(int)response.StatusCode} {response.ReasonPhrase} {Environment.NewLine}{res}");
                 }
-                //var sUrl = await graphClient.Education.SynchronizationProfiles[syncProfileId].Request().GetAsync();                
+                // C# Type request: currently not working due to an sdk issue, a patch should be released
                 //var sUrl = await graphClient.Education.SynchronizationProfiles[syncProfileId].UploadUrl().Request().GetAsync();
-                //var sUrl = await graphClient.Education.SynchronizationProfiles[$"{{{syncProfileId}}}"].UploadUrl().Request().GetAsync();
-                //var sUrl = await graphClient.Education.SynchronizationProfiles[@"" + syncProfileId + ""].UploadUrl().Request().GetAsync();
-                //var sUrl = await graphClient.Education.SynchronizationProfiles["''" + syncProfileId + "''"].UploadUrl().Request().GetAsync();
-                //var sUrl = await graphClient.Education.SynchronizationProfiles["'" + syncProfileId + "'"].UploadUrl().Request().GetAsync();                
-                //var sUrl = await graphClient.Education.SynchronizationProfiles[@"{""" + syncProfileId + @"""}"].UploadUrl().Request().GetAsync();
-                //var @string = await graphClient.Education.SynchronizationProfiles[@"""{" + syncProfileId + @"}"""].UploadUrl().Request().GetAsync();
-
-                //return @string.ToString();
+                //return sUrl;
             }
             catch (Exception ex)
             {
@@ -291,7 +284,7 @@ namespace Proge.Teams.Edu.GraphApi
         /// </summary>
         /// <param name="uploadUrl">Url where the files must be upload.</param>
         /// <param name="fileFullPaths">List of the full local path of the files to upload (array of strings).</param>
-        /// <returns></returns>
+        /// <returns>True with no message if the upload succesfully completes, false with an error message otherwise. </returns>
         public async Task<(bool IsSuccess, string RetMessage)> UploadCsvFiles(string uploadUrl, string[] fileFullPaths)
         {
             try
@@ -316,7 +309,7 @@ namespace Proge.Teams.Edu.GraphApi
         /// Start a synchronization attempt.
         /// </summary>
         /// <param name="syncProfileId">Synchronization profile identifier.</param>
-        /// <returns></returns>
+        /// <returns>True with a confirmation message if the sync attempt succesfully starts, false with a status code otherwise.</returns>
         public async Task<(bool IsSuccess, string RetMessage)> StartEduSyncProfileSynchronization(string syncProfileId)
         {
             try
@@ -336,7 +329,6 @@ namespace Proge.Teams.Edu.GraphApi
                 //}
 
                 var res = await graphClient.Education
-                    //.SynchronizationProfiles[$"{syncProfileId}"]
                     .SynchronizationProfiles[syncProfileId]
                     .Start()
                     .Request()
@@ -362,7 +354,7 @@ namespace Proge.Teams.Edu.GraphApi
         /// Get the status of a specific school data synchronization profile in the tenant.
         /// </summary>
         /// <param name="syncProfileId">Synchronization profile identifier.</param>
-        /// <returns></returns>
+        /// <returns>The status of the education sync profile (Microsoft.Graph.EducationSynchronizationProfileStatus object).</returns>
         public async Task<Beta.EducationSynchronizationProfileStatus> GetEduSyncProfileStatus(string syncProfileId)
         {
             try
@@ -370,7 +362,6 @@ namespace Proge.Teams.Edu.GraphApi
                 await EnsureUnpToken();
                 //HttpResponseMessage response = await unpClient.GetAsync($"https://graph.microsoft.com/beta/education/synchronizationProfiles/{syncProfileId}/profileStatus");
                 Beta.EducationSynchronizationProfileStatus status = await graphClient.Education
-                    //.SynchronizationProfiles[$"{syncProfileId}"]
                     .SynchronizationProfiles[syncProfileId]
                     .ProfileStatus
                     .Request()
@@ -533,7 +524,7 @@ namespace Proge.Teams.Edu.GraphApi
         /// Get the errors generated during validation and/or during a sync of a specific school data synchronization profile in the tenant.
         /// </summary>
         /// <param name="syncProfileId">Synchronization profile identifier.</param>
-        /// <returns></returns>
+        /// <returns>Collection of errors (collection of Microsoft.Graph.EducationSynchronizationError).</returns>
         public async Task<IEnumerable<Beta.EducationSynchronizationError>> GetSyncErrors(string syncProfileId)
         {
             try
@@ -561,6 +552,37 @@ namespace Proge.Teams.Edu.GraphApi
                 //{
                 //    return (false, $"{(int)response.StatusCode} {response.ReasonPhrase} {Environment.NewLine}{res}");
                 //}
+
+
+
+
+                ////*** ToTest: Output built with NextPageRequest code implementation start
+                //await EnsureUnpToken();
+                ////HttpResponseMessage response = await unpClient.GetAsync($"https://graph.microsoft.com/beta/education/synchronizationProfiles/{syncProfileId}/errors");
+                //List<Beta.EducationSynchronizationError> errorList = new List<Beta.EducationSynchronizationError>();
+
+                //var errors = await graphClient.Education
+                //    .SynchronizationProfiles[syncProfileId]
+                //    .Errors
+                //    .Request()
+                //    .GetAsync();
+
+                //while (errors.Count > 0)
+                //{
+                //    errorList.AddRange(errors);
+                //    if (errors.NextPageRequest != null)
+                //    {
+                //        errors = await errors.NextPageRequest
+                //            .GetAsync();
+                //    }
+                //    else
+                //    {
+                //        break;
+                //    }
+                //}
+
+                //return errorList;
+                //*** Output built with NextPageRequest code implementation end
             }
             catch (Exception ex)
             {
@@ -570,11 +592,11 @@ namespace Proge.Teams.Edu.GraphApi
 
         #region Moke Data functions
         /// <summary>
-        /// Create an object of type Beta.EducationSynchronizationProfile with moke data.
+        /// Build an object of type Beta.EducationSynchronizationProfile with moke data.
         /// </summary>
         /// <param name="profileName">Name for the profile</param>
         /// <param name="newProfileIdentitySyncConfType">'Create' or 'Match', depending if the profile must be created for not exisintg or existing users.</param>
-        /// <returns></returns>
+        /// <returns>A Microsoft.Graph.EducationSynchronizationProfile object.</returns>
         public Beta.EducationSynchronizationProfile DefaultSyncProfileFactory(string profileName, string newProfileIdentitySyncConfType)
         {
             Beta.EducationSynchronizationProfile retProfile = null;
