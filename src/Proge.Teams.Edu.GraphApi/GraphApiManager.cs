@@ -160,9 +160,17 @@ namespace Proge.Teams.Edu.GraphApi
                 return;
 
             var directoryObject = new DirectoryObject { Id = id };
-            await Retry.Do<Task>(async () => await graphClient.Groups[$"{groupid}"].Owners.References
-               .Request()
-               .AddAsync(directoryObject), TimeSpan.FromSeconds(_authenticationConfig.RetryDelay));
+
+            try
+            {
+                await Retry.Do<Task>(async () => await graphClient.Groups[$"{groupid}"].Owners.References
+                       .Request()
+                       .AddAsync(directoryObject), TimeSpan.FromSeconds(_authenticationConfig.RetryDelay), 2);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, $"AddGruopOwner: user {id} for grouo {groupid}");
+            }
         }
 
         /// <summary>
@@ -463,10 +471,18 @@ namespace Proge.Teams.Edu.GraphApi
         /// <returns>The Microsoft.Graph.Team object.</returns>
         public async Task<Team> GetTeam(string id)
         {
-            var resGroup = await Retry.Do(async () => await graphClient.Teams[$"{id}"]
-                .Request()
-                .GetAsync(), TimeSpan.FromSeconds(_authenticationConfig.RetryDelay));
-            return resGroup;
+            try
+            {
+                var resGroup = await Retry.Do(async () => await graphClient.Teams[$"{id}"]
+                      .Request()
+                      .GetAsync(), TimeSpan.FromSeconds(_authenticationConfig.RetryDelay));
+                return resGroup;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, $"Team {id} *probably* not found");
+                return null;
+            }
         }
 
         /// <summary>
@@ -511,17 +527,17 @@ namespace Proge.Teams.Edu.GraphApi
                 .Expand("members")//,teams,owners")
                 .GetAsync(), TimeSpan.FromSeconds(_authenticationConfig.RetryDelay));
             result.Group = group;
-            
+
             try
             {
                 result.Group.Team = await Retry.Do(async () => await graphClient.Teams[$"{id}"]
                         .Request()
-                        .GetAsync(), TimeSpan.FromSeconds(_authenticationConfig.RetryDelay));
+                        .GetAsync(), TimeSpan.FromSeconds(_authenticationConfig.RetryDelay), 1);
             }
             catch (Exception ex)
             {
                 _logger.LogWarning($"Team non trovato nel gruppo {id}");
-            }            
+            }
 
             var members = await GetTeamMembers(id);
             result.Group.Members.Clear();
@@ -544,9 +560,13 @@ namespace Proge.Teams.Edu.GraphApi
         public async Task<Team> GetTeamWChannelsWTabs(string id)
         {
             var result = await GetTeam(id);
+            if (result == null)
+                return result;
+
             var channels = await Retry.Do(async () => await graphClient.Teams[$"{id}"].Channels
-                .Request()
-                .GetAsync(), TimeSpan.FromSeconds(_authenticationConfig.RetryDelay));
+                    .Request()
+                    .GetAsync(), TimeSpan.FromSeconds(_authenticationConfig.RetryDelay));
+
             result.Channels = channels;
 
             foreach (var item in channels)

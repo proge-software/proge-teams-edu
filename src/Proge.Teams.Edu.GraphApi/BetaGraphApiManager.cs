@@ -13,21 +13,22 @@ using System.Net.Http.Headers;
 using System.Security.Authentication;
 using System.Text;
 using System.Threading.Tasks;
-
+using Microsoft.Extensions.Logging;
 
 namespace Proge.Teams.Edu.GraphApi
 {
     public class BetaGraphApiManager : IBetaGraphApiManager
     {
+        private readonly ILogger<BetaGraphApiManager> _logger;
         private readonly AuthenticationConfig _authenticationConfig;
         private IConfidentialClientApplication app { get; set; }
         private ClientCredentialProvider authProvider { get; set; }
         private Beta.GraphServiceClient graphClient { get; set; }
         private AuthenticationResult authenticationResult;
 
-        public BetaGraphApiManager(IOptions<AuthenticationConfig> authCfg)
+        public BetaGraphApiManager(IOptions<AuthenticationConfig> authCfg, ILogger<BetaGraphApiManager> logger)
         {
-            //_mapper = mapper;
+            _logger = logger;
             _authenticationConfig = authCfg.Value;
             app = ConfidentialClientApplicationBuilder.Create(_authenticationConfig.ClientId)
                   .WithAuthority(AzureCloudInstance.AzurePublic, _authenticationConfig.TenantId)
@@ -65,10 +66,18 @@ namespace Proge.Teams.Edu.GraphApi
         /// <returns>Microsoft.Graph.Team object.</returns>
         public async Task<Beta.Team> GetTeam(string id)
         {
-            var resGroup = await Retry.Do(async () => await graphClient.Teams[$"{id}"]
-                .Request()
-                .GetAsync(), TimeSpan.FromSeconds(_authenticationConfig.RetryDelay));
-            return resGroup;
+            try
+            {
+                var resGroup = await Retry.Do(async () => await graphClient.Teams[$"{id}"]
+                        .Request()
+                        .GetAsync(), TimeSpan.FromSeconds(_authenticationConfig.RetryDelay));
+                return resGroup;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, $"GetTeam: Team *probably* not found");
+                return null;
+            }
         }
 
         /// <summary>

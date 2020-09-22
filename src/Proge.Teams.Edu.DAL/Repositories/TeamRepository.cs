@@ -60,27 +60,27 @@ namespace Proge.Teams.Edu.DAL.Repositories
         public async Task<Team> InsertOrUpdate(IEducationalClassTeam eduClass)
         {
             //var userInGroup = eduClass.Owners.Concat(eduClass.Members);
-            //var userInGroupId = userInGroup.Select(a=> new Guid(a.AzureAdId));
+            //var userInGroupId = userInGroup.Select(a => new Guid(a.AzureAdId));
             //var userInDb = await _dbContext.Members.Where(a => userInGroupId.Contains(a.MemberId)).ToListAsync();
             //userInGroup.Where(a => !userInDb.Select(b => b.MemberId).Contains(Guid.Parse(a.AzureAdId)))
             //    .ToList()
-            //    .ForEach(a => _dbContext.Add(new Member() { UserPrincipalName = a.UserPrincipalName, MemberId = Guid.Parse(a.AzureAdId), TenantId = eduClass.TenantId }));            
-            
+            //    .ForEach(a => _dbContext.Add(new Member() { UserPrincipalName = a.UserPrincipalName, MemberId = Guid.Parse(a.AzureAdId), TenantId = eduClass.TenantId }));
+
             var team = await this._defaultCollection<Team>()
                 .Include(a => a.TeamsUsers)
                 .Where(a => a.TeamsId == eduClass.Id)
                 .FirstOrDefaultAsync();
 
             //var users = eduClass.Owners
-            //    .Select(a => new TeamMember() { MemberId = Guid.Parse(a.AzureAdId) , MemberType = MemberType.Owner})
+            //    .Select(a => new TeamMember() { MemberId = Guid.Parse(a.AzureAdId), MemberType = MemberType.Owner })
             //    .Concat(eduClass.Members
-            //    .Select(a => new TeamMember() { MemberId = Guid.Parse(a.AzureAdId) ,  MemberType = MemberType.Member}))
+            //    .Select(a => new TeamMember() { MemberId = Guid.Parse(a.AzureAdId), MemberType = MemberType.Member }))
             //    .ToList();
 
             if (team == null)
             {
                 team = new Team()
-                {   
+                {
                     CreatedOn = DateTime.UtcNow,
                     Description = eduClass.Description,
                     ExternalId = eduClass.Key,
@@ -101,14 +101,14 @@ namespace Proge.Teams.Edu.DAL.Repositories
             {
                 team.Description = eduClass.Description;
                 team.ExternalId = eduClass.Key;
-                team.Name = eduClass.Name;                
+                team.Name = eduClass.Name;
                 team.InternalId = eduClass.InternalId;
                 team.TenantId = eduClass.TenantId;
                 team.JoinCode = eduClass.JoinCode;
                 team.JoinUrl = eduClass.JoinUrl;
                 team.TeamType = eduClass.TeamType;
                 team.IsMembershipLimitedToOwners = eduClass.IsMembershipLimitedToOwners.Value;
-                
+
                 //var newIds = users == null || !users.Any() ? Enumerable.Empty<TeamMember>() : users;
                 //var existingIds = team.TeamsUsers == null || !team.TeamsUsers.Any() ? Enumerable.Empty<TeamMember>() : team.TeamsUsers;
 
