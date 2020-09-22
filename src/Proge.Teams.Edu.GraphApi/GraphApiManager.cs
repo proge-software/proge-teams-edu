@@ -201,9 +201,16 @@ namespace Proge.Teams.Edu.GraphApi
                 return;
 
             var directoryObject = new DirectoryObject { Id = id };
-            await Retry.Do<Task>(async () => await graphClient.Groups[$"{groupid}"].Members.References
-               .Request()
-               .AddAsync(directoryObject), TimeSpan.FromSeconds(_authenticationConfig.RetryDelay));
+            try
+            {
+                await Retry.Do<Task>(async () => await graphClient.Groups[$"{groupid}"].Members.References
+                       .Request()
+                       .AddAsync(directoryObject), TimeSpan.FromSeconds(_authenticationConfig.RetryDelay), 2);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, $"AddGroupMember: user {id} for grouo {groupid}");
+            }
         }
 
         /// <summary>
