@@ -54,6 +54,7 @@ namespace Proge.Teams.Edu.Abstraction
         Task AddGroupOwners(string groupid, IEnumerable<string> ownerIds, IEnumerable<DirectoryObject> ownersInGroup = null);
         Task AddGroupMembers(string groupid, IEnumerable<string> memeberIds, IEnumerable<DirectoryObject> ownersInGroup = null);
         Task<IEnumerable<DirectoryObject>> GetTeamMembers(string id);
+        Task SendMail(string senderEmailAddress, Message message);
     }
 
 }
