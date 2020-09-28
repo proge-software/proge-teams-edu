@@ -49,7 +49,7 @@ Once you have completed authentication , you can begin to make calls to the serv
 In `src` folder there's an example how to integrate the calls inside a job that can be
 placed behind a Console Application, a WebJob or a WebApi project.
 
-Based on the .net built in dependancy injection Engine
+Based on the .NET built in dependancy injection Engine
 
 
 ## License
