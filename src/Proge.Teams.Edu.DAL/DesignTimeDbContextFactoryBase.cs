@@ -39,6 +39,7 @@ namespace Proge.Teams.Edu.DAL
                 .AddJsonFile("appsettings.json")
                 .AddJsonFile($"appsettings.{environmentName}.json", true)
                 .AddJsonFile($"appsettings.local.json", true)
+                .AddJsonFile($"appsettings.release.json", true)
                 ;
 
             var config = builder.Build();

@@ -107,7 +107,7 @@ namespace Proge.Teams.Edu.GraphApi
                 var users = await graphClient.Users
                        .Request()
                        .Filter(filter)
-                       .Select("id,userPrincipalName,jobTitle,officeLocation,department,mail,assignedLicenses")
+                       .Select("id,userPrincipalName,givenName,surname")//,jobTitle,officeLocation,department,mail,assignedLicenses")
                        .GetAsync();
 
                 // Check assignedLiceses as A1+ only have Teams
@@ -122,7 +122,9 @@ namespace Proge.Teams.Edu.GraphApi
                     {
                         UserPrincipalName = user.UserPrincipalName,
                         Mail = user.Mail,
-                        AzureAdId = user.Id,
+                        AzureAdId = user.Id,   
+                        Name = user.GivenName,
+                        SecondName = user.Surname
                     };
             }
             catch (Exception ex)
@@ -169,7 +171,7 @@ namespace Proge.Teams.Edu.GraphApi
             }
             catch (Exception ex)
             {
-                _logger.LogWarning(ex, $"AddGruopOwner: user {id} for grouo {groupid}");
+                _logger.LogWarning(ex, $"AddGroupOwner: user {id} for group {groupid}");
             }
         }
 
@@ -201,9 +203,16 @@ namespace Proge.Teams.Edu.GraphApi
                 return;
 
             var directoryObject = new DirectoryObject { Id = id };
-            await Retry.Do<Task>(async () => await graphClient.Groups[$"{groupid}"].Members.References
-               .Request()
-               .AddAsync(directoryObject), TimeSpan.FromSeconds(_authenticationConfig.RetryDelay));
+            try
+            {
+                await Retry.Do<Task>(async () => await graphClient.Groups[$"{groupid}"].Members.References
+                       .Request()
+                       .AddAsync(directoryObject), TimeSpan.FromSeconds(_authenticationConfig.RetryDelay), 2);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, $"AddGroupMember: user {id} for group {groupid}");
+            }
         }
 
         /// <summary>
@@ -536,7 +545,7 @@ namespace Proge.Teams.Edu.GraphApi
             }
             catch (Exception ex)
             {
-                _logger.LogWarning($"Team non trovato nel gruppo {id}");
+                _logger.LogWarning($"Team not found in group {id}");
             }
 
             var members = await GetTeamMembers(id);
@@ -914,6 +923,25 @@ namespace Proge.Teams.Edu.GraphApi
                 .Request(queryOptions)
                 .GetAsync();
             return site;
+        }
+
+        /// <summary>
+        /// Send an email.
+        /// </summary>
+        /// <param name="senderEmailAddress">E-mail address of the sender.</param>
+        /// <param name="message">Microsoft.Graph.Message object that represent the message to send.</param>
+        /// <returns></returns>
+        public async Task SendMail(string senderEmailAddress, Message message)
+        {
+            try
+            {
+                await graphClient.Users[senderEmailAddress].SendMail(message).Request().PostAsync();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, $"Email not sent");
+            }
+            
         }
     }
 }
