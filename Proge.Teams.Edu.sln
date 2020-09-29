@@ -8,7 +8,10 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 		.dockerignore = .dockerignore
 		.gitignore = .gitignore
 		Directory.Build.props = Directory.Build.props
-		.github\workflows\publish.yml = .github\workflows\publish.yml
+		.github\workflows\Proge.Teams.Edu.Abstraction.yml = .github\workflows\Proge.Teams.Edu.Abstraction.yml
+		.github\workflows\Proge.Teams.Edu.DAL.yml = .github\workflows\Proge.Teams.Edu.DAL.yml
+		.github\workflows\Proge.Teams.Edu.Esse3.yml = .github\workflows\Proge.Teams.Edu.Esse3.yml
+		.github\workflows\Proge.Teams.Edu.GraphApi.yml = .github\workflows\Proge.Teams.Edu.GraphApi.yml
 		README.md = README.md
 	EndProjectSection
 EndProject
