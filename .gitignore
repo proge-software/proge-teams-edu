@@ -12,7 +12,6 @@
 appsettings.local.json
 appsettings.unimore.json
 nuget.config
-publish.yml
 
 # User-specific files (MonoDevelop/Xamarin Studio)
 *.userprefs
