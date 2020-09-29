@@ -19,6 +19,9 @@ namespace Proge.Teams.Edu.DAL
         public DbSet<Team> Teams { get; set; }
         public DbSet<Member> Members { get; set; }
         public DbSet<TeamMember> TeamMembers { get; set; }
+        public DbSet<Log> Logs { get; set; }
+        public DbSet<LatestLog> LatestLogs { get; set; }
+        public DbSet<TeamWithMemeber> TeamsWithMemeber { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -27,6 +30,9 @@ namespace Proge.Teams.Edu.DAL
             modelBuilder.ApplyConfiguration(TeamConfiguration.Default);
             modelBuilder.ApplyConfiguration(MemberConfiguration.Default);
             modelBuilder.ApplyConfiguration(TeamMemberConfiguration.Default);
+            modelBuilder.ApplyConfiguration(LogConfiguration.Default);
+            modelBuilder.ApplyConfiguration(LatestLogConfiguration.Default);
+            modelBuilder.ApplyConfiguration(TeamWithMemeberConfiguration.Default);
 
 
         }

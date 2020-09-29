@@ -1,11 +1,19 @@
 {
-    "version": "2.0",
-    "logging": {
-        "applicationInsights": {
-            "samplingExcludedTypes": "Request",
-            "samplingSettings": {
-                "isEnabled": true
-            }
-        }
+  "version": "2.0",
+  "logging": {
+    "applicationInsights": {
+      "samplingExcludedTypes": "Request",
+      "samplingSettings": {
+        "isEnabled": true
+      }
+    },
+    "categoryFilter": {
+      "defaultLevel": "Information",
+      "categoryLevels": {
+        "Host.Results": "Error",
+        "Function": "Error",
+        "Host.Aggregator": "Trace"
+      }
     }
+  }
 }
