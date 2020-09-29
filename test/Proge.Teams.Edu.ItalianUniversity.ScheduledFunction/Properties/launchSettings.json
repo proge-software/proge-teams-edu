@@ -1,0 +1,13 @@
+{
+  "profiles": {
+    "Proge.Teams.Edu.ItalianUniversity.ScheduledFunction": {
+      "commandName": "Project"
+    },
+    "Docker": {
+      "commandName": "Docker",
+      "launchUrl": "{Scheme}://{ServiceHost}:{ServicePort}",
+      "httpPort": 33267,
+      "useSSL": false
+    }
+  }
+}
