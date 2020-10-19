@@ -26,6 +26,7 @@ namespace Proge.Teams.Edu.Abstraction
         Task DeleteChannel(string groupId, string chanId);
         Task DeleteEducationalClassesByExternalIdPrefix(string externalIdPrefix);
         Task DeleteEducationClass(string id);
+        Task<IEnumerable<DirectoryObject>> GetRecentlyDeletedGroupsByMailNickname(string groupEmail);
         Task<EducationClass> GetEducationClass(string id);
         Task<IEnumerable<EducationClass>> GetEducationClasses();
         Task<EducationClass> GetEducationClassWGroupWTeam(string id);

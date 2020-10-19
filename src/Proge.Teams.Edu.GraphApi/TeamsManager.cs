@@ -172,21 +172,28 @@ namespace Proge.Teams.Edu.GraphApi
             {
                 try
                 {
-                    using (var httpRequest = new HttpRequestMessage(HttpMethod.Get, requestUri))
+                    var httpRequest = new HttpRequestMessage(HttpMethod.Get, requestUri);
+                    httpClient.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+                    httpRequest.Headers.Authorization = new AuthenticationHeaderValue("Bearer", unpToken);
+                    httpRequest.Headers.Add("X-Skypetoken", teamToken);
+                    httpRequest.Headers.Add("ExpiresOn", $"{unpExpires}");
+                    var response = await httpClient.SendAsync(httpRequest);
+                    if (response.StatusCode == System.Net.HttpStatusCode.Unauthorized)
                     {
-                        httpClient.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+                        //TODO: Refresh token
+                        await Connect();
+                        httpRequest = new HttpRequestMessage(HttpMethod.Get, requestUri);
                         httpRequest.Headers.Authorization = new AuthenticationHeaderValue("Bearer", unpToken);
                         httpRequest.Headers.Add("X-Skypetoken", teamToken);
                         httpRequest.Headers.Add("ExpiresOn", $"{unpExpires}");
-                        var response = await httpClient.SendAsync(httpRequest);
-                        response.EnsureSuccessStatusCode();
-
-                        var ret = await response.Content.ReadAsStringAsync();
-                        var joinCode = Newtonsoft.Json.JsonConvert.DeserializeObject<string>(ret);
-                        //if (string.IsNullOrWhiteSpace(joinCode))
-                        //    throw new Exception($"GetJoinCode: empty join code for team internal id {internalTeamId}");
-                        return joinCode;
+                        response = await httpClient.SendAsync(httpRequest);
                     }
+                    response.EnsureSuccessStatusCode();
+
+                    var ret = await response.Content.ReadAsStringAsync();
+                    var joinCode = Newtonsoft.Json.JsonConvert.DeserializeObject<string>(ret);
+                    return joinCode;
+
                 }
                 catch (Exception ex)
                 {
@@ -208,21 +215,29 @@ namespace Proge.Teams.Edu.GraphApi
             {
                 try
                 {
-                    using (var httpRequest = new HttpRequestMessage(HttpMethod.Put, requestUri))
+                    var httpRequest = new HttpRequestMessage(HttpMethod.Put, requestUri);
+
+                    httpClient.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+                    httpRequest.Headers.Authorization = new AuthenticationHeaderValue("Bearer", unpToken);
+                    httpRequest.Headers.Add("X-Skypetoken", teamToken);
+                    httpRequest.Headers.Add("ExpiresOn", $"{unpExpires}");
+                    var response = await httpClient.SendAsync(httpRequest);
+                    if (response.StatusCode == System.Net.HttpStatusCode.Unauthorized)
                     {
-                        httpClient.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+                        //TODO: Refresh token
+                        await Connect();
+                        httpRequest = new HttpRequestMessage(HttpMethod.Put, requestUri);
                         httpRequest.Headers.Authorization = new AuthenticationHeaderValue("Bearer", unpToken);
                         httpRequest.Headers.Add("X-Skypetoken", teamToken);
                         httpRequest.Headers.Add("ExpiresOn", $"{unpExpires}");
-                        var response = await httpClient.SendAsync(httpRequest);
-                        response.EnsureSuccessStatusCode();
-
-                        var ret = await response.Content.ReadAsStringAsync();
-                        var joinCode = Newtonsoft.Json.JsonConvert.DeserializeObject<string>(ret);
-                        //if (string.IsNullOrWhiteSpace(joinCode))
-                        //    throw new Exception($"GetJoinCode: Join code http call succes, but with empty result");
-                        return joinCode;
+                        response = await httpClient.SendAsync(httpRequest);
                     }
+                    response.EnsureSuccessStatusCode();
+
+                    var ret = await response.Content.ReadAsStringAsync();
+                    var joinCode = Newtonsoft.Json.JsonConvert.DeserializeObject<string>(ret);
+                    return joinCode;
+
                 }
                 catch (Exception ex)
                 {
@@ -239,9 +254,9 @@ namespace Proge.Teams.Edu.GraphApi
         /// <returns>Microsoft.Graph.Team object.</returns>
         public async Task<bool> ActivateTeam(string internalTeamId)
         {
-            var requestUri =   $"https://teams.microsoft.com/api/mt/part/msft/beta/teams/{internalTeamId}/unlock";
+            var requestUri = $"https://teams.microsoft.com/api/mt/part/msft/beta/teams/{internalTeamId}/unlock";
             using (var httpClient = new HttpClient())
-            {                
+            {
                 try
                 {
                     using (var httpRequest = new HttpRequestMessage(HttpMethod.Post, requestUri))
@@ -268,7 +283,7 @@ namespace Proge.Teams.Edu.GraphApi
                             _logger.LogWarning(ex, $"ActivateTeam: Error deserializing the response for  {ret}");
                             return false;
                         }
-                        
+
                     }
                 }
                 catch (Exception ex)

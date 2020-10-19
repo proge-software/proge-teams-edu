@@ -1,19 +1,13 @@
 ﻿extern alias BetaLib;
-using Beta = BetaLib.Microsoft.Graph;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Microsoft.Graph.Auth;
 using Microsoft.Identity.Client;
 using Proge.Teams.Edu.Abstraction;
-using Proge.Teams.Edu.GraphApi.Models;
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Net.Http;
-using System.Net.Http.Headers;
-using System.Security.Authentication;
-using System.Text;
 using System.Threading.Tasks;
-using Microsoft.Extensions.Logging;
+using Beta = BetaLib.Microsoft.Graph;
 
 namespace Proge.Teams.Edu.GraphApi
 {
@@ -57,6 +51,104 @@ namespace Proge.Teams.Edu.GraphApi
                 // Mitigation: change the scope to be as expected
                 throw ex;
             }
+        }
+
+        public async Task<Beta.Subscription> AddSubscription(string changeType, string resource, DateTimeOffset? expirationOffset, string clientStateSecret,
+             string notificationUrl)
+        {
+            try
+            {
+                var subscription = new Beta.Subscription()
+                {
+                    ChangeType = changeType,
+                    Resource = resource,
+                    ExpirationDateTime = expirationOffset,
+                    ClientState = clientStateSecret,
+                    NotificationUrl = notificationUrl,
+
+                };
+
+                var res = await graphClient.Subscriptions
+                    .Request()
+                    .AddAsync(subscription)
+                    ;
+
+                return res;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, $"RenewSubscription: ");
+                return null;
+            }
+        }
+
+
+        public async Task RenewSubscription(string id)
+        {
+            try
+            {
+                await graphClient.Subscriptions[id].Request().UpdateAsync(new Beta.Subscription
+                {
+                    ExpirationDateTime = new DateTimeOffset(DateTime.UtcNow.AddDays(2), TimeSpan.Zero)
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, $"RenewSubscription: ");
+            }
+        }
+        public async Task<bool> GetSubscriptions()
+        {
+            try
+            {
+                bool isRenewed = false;
+                Beta.IGraphServiceSubscriptionsCollectionPage subscriptionCollectionPage = await graphClient.Subscriptions.Request().GetAsync();
+                Beta.IGraphServiceSubscriptionsCollectionRequest subscriptionsNextpageRequest = subscriptionCollectionPage.NextPageRequest;
+
+                foreach (Beta.Subscription subscription in subscriptionCollectionPage.CurrentPage)
+                {
+                    await RenewSubscription(subscription.Id);
+                    isRenewed = true;
+                }
+
+                while (subscriptionsNextpageRequest != null)
+                {
+                    Beta.IGraphServiceSubscriptionsCollectionPage subscriptionsNextPage = await subscriptionsNextpageRequest.GetAsync();
+                    subscriptionsNextpageRequest = subscriptionsNextPage.NextPageRequest;
+
+                    foreach (Beta.Subscription subscription in subscriptionsNextPage.CurrentPage)
+                    {
+                        await RenewSubscription(subscription.Id);
+                        isRenewed = true;
+                    }
+                }
+
+                return isRenewed;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, $"GetSubscriptions: ");
+                return false;
+            }
+        }
+
+
+        public async Task<Beta.IReportRootGetTeamsUserActivityUserDetailCollectionPage> GetTeamsUserActivityUserDetail(Microsoft.Graph.Date date)
+        {
+            //try
+            //{
+            var res = await graphClient.Reports.GetTeamsUserActivityUserDetail(date)
+                .Request()
+                .GetAsync()
+                ;
+
+            return res;
+            //}
+            //catch (Exception ex)
+            //{
+            //    _logger.LogWarning(ex, $"GetTeam: Team *probably* not found");
+            //    return null;
+            //}
         }
 
         /// <summary>

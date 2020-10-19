@@ -14,7 +14,7 @@ namespace Proge.Teams.Edu.DAL.Repositories
     {
         Task<IEnumerable<Team>> GetTeams();
         Task<Team> GetTeamById(string teamId);
-        Task<Team> GetTeamByExternalId(string teamId);
+        Task<Team> GetTeamByExternalId(string teamId, bool excludeDeleted = true);
         Task<Team> InsertOrUpdate(IEducationalClassTeam eduClass);
         Task<Team> InsertOrUpdateWMembers(IEducationalClassTeam eduClass);
         Task<IEnumerable<Member>> GetTeamMember(string teamId);
@@ -38,6 +38,11 @@ namespace Proge.Teams.Edu.DAL.Repositories
                 .ThenInclude(a => a.Member)
                 .AsQueryable();
 
+        private IQueryable<Team> _defaultTeamCollectionWithDeleted() => this._defaultCollectionWithDeleted<Team>()
+                .Include(a => a.TeamsUsers)
+                .ThenInclude(a => a.Member)
+                .AsQueryable();
+
         public async Task<Team> GetTeamById(string teamId)
         {
             if (string.IsNullOrWhiteSpace(teamId) || !Guid.TryParse(teamId, out Guid teamGuid))
@@ -48,14 +53,23 @@ namespace Proge.Teams.Edu.DAL.Repositories
                 .FirstOrDefaultAsync();
         }
 
-        public async Task<Team> GetTeamByExternalId(string teamId)
+        public async Task<Team> GetTeamByExternalId(string teamId, bool excludeDeleted = true)
         {
             if (string.IsNullOrWhiteSpace(teamId))
                 return null;
 
-            return await this._defaultTeamCollection()
-                .Where(a => a.ExternalId == teamId)
-                .FirstOrDefaultAsync();
+            if (excludeDeleted)
+            {
+                return await this._defaultTeamCollection()
+                    .Where(a => a.ExternalId == teamId)
+                    .FirstOrDefaultAsync();
+            }
+            else
+            {
+                return await this._defaultTeamCollectionWithDeleted()
+                    .Where(a => a.ExternalId == teamId)
+                    .FirstOrDefaultAsync();
+            }
         }
 
         public async Task<Team> InsertOrUpdate(IEducationalClassTeam eduClass)
@@ -221,6 +235,5 @@ namespace Proge.Teams.Edu.DAL.Repositories
                 .Select(a => a.Member)
                 .ToListAsync();            
         }
-
     }
 }
