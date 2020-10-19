@@ -38,6 +38,7 @@ namespace Proge.Teams.Edu.DAL.Repositories
         void Detach<TEntity>(TEntity entity) where TEntity : class;
 
         IQueryable<T> _defaultCollection<T>() where T : BaseEntity;
+        IQueryable<T> _defaultCollectionWithDeleted<T>() where T : BaseEntity;
         IQueryable<T> _defaultReadOnlyCollection<T>() where T : BaseEntity;
     }
 
@@ -219,6 +220,7 @@ namespace Proge.Teams.Edu.DAL.Repositories
         }
 
         public IQueryable<T> _defaultCollection<T>() where T : BaseEntity => _dbContext.Set<T>().NotDeleted().AsQueryable();
+        public IQueryable<T> _defaultCollectionWithDeleted<T>() where T : BaseEntity => _dbContext.Set<T>().AsQueryable();
         public IQueryable<T> _defaultReadOnlyCollection<T>() where T : BaseEntity => _defaultCollection<T>().AsNoTracking();
 
 

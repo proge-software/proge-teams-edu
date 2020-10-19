@@ -131,22 +131,11 @@ namespace Proge.Teams.Edu.GraphApi
             try
             {
                 await EnsureUnpToken();
-                HttpContent content = new StringContent(Newtonsoft.Json.JsonConvert.SerializeObject(syncProfile), Encoding.Default, "application/json");
-                //HttpResponseMessage response = await graphClient.PostAsync("https://graph.microsoft.com/beta/education/synchronizationProfiles", content);
+                HttpContent content = new StringContent(Newtonsoft.Json.JsonConvert.SerializeObject(syncProfile), Encoding.Default, "application/json");                
                 var addedSyncProfile = await graphClient.Education
                     .SynchronizationProfiles
                     .Request()
-                    .AddAsync(syncProfile);
-                //string res = await response.Content.ReadAsStringAsync();
-                //if (response.IsSuccessStatusCode)
-                //{
-                //    return (true, res);
-                //}
-                //else
-                //{
-                //    return (false, $"{(int)response.StatusCode} {response.ReasonPhrase} {Environment.NewLine}{res}");
-                //}
-                //response.EnsureSuccessStatusCode();
+                    .AddAsync(syncProfile);               
 
                 return addedSyncProfile;
             }
@@ -164,22 +153,9 @@ namespace Proge.Teams.Edu.GraphApi
         {
             try
             {
-                await EnsureUnpToken();
-                //HttpResponseMessage response = await unpClient.GetAsync($"https://graph.microsoft.com/beta/education/synchronizationProfiles");
+                await EnsureUnpToken();                
                 var response = await graphClient.Education.SynchronizationProfiles.Request().GetAsync();
-
                 List<Beta.EducationSynchronizationProfile> profiles = response.ToList();
-
-                //string res = await response.Content.ReadAsStringAsync();
-                //if (response.IsSuccessStatusCode)
-                //{
-                //    return (true, res);
-                //}
-                //else
-                //{
-                //    return (false, $"{(int)response.StatusCode} {response.ReasonPhrase} {Environment.NewLine}{res}");
-                //}
-
                 return profiles;
             }
             catch (Exception ex)
@@ -197,23 +173,11 @@ namespace Proge.Teams.Edu.GraphApi
         {
             try
             {
-                await EnsureUnpToken();
-                //HttpResponseMessage response = await unpClient.GetAsync($"https://graph.microsoft.com/beta/education/synchronizationProfiles/{syncProfileId}");
+                await EnsureUnpToken();                
                 Beta.EducationSynchronizationProfile profile = await graphClient.Education
                     .SynchronizationProfiles[syncProfileId]
                     .Request()
                     .GetAsync();
-
-                //string res = await response.Content.ReadAsStringAsync();
-                //if (response.IsSuccessStatusCode)
-                //{
-                //    return (true, res);
-                //}
-                //else
-                //{
-                //    return (false, $"{(int)response.StatusCode} {response.ReasonPhrase} {Environment.NewLine}{res}");
-                //}
-
                 return profile;
             }
             catch (Exception ex)
@@ -228,8 +192,7 @@ namespace Proge.Teams.Edu.GraphApi
         /// <returns>The education synchronization profile id.</returns>
         public async Task<string> GetSyncProfileIdByDisplayName(string profileName)
         {
-            string sId = string.Empty;
-            //List<Beta.EducationSynchronizationProfile> profiles = await GetEduSyncProfiles();
+            string sId = string.Empty;            
             var profiles = await GetEduSyncProfiles();
             if (profiles.Any(p => p.DisplayName == profileName))
             {
@@ -315,19 +278,6 @@ namespace Proge.Teams.Edu.GraphApi
             try
             {
                 await EnsureUnpToken();
-                //HttpContent emptyContent = new StringContent(string.Empty, Encoding.Default, "application/json");
-                //HttpResponseMessage response = await unpClient.PostAsync($"https://graph.microsoft.com/beta/education/synchronizationProfiles/{syncProfileId}/start", emptyContent);
-
-                //string res = await response.Content.ReadAsStringAsync();
-                //if (response.IsSuccessStatusCode)
-                //{
-                //    return (true, res);
-                //}
-                //else
-                //{
-                //    return (false, $"{(int)response.StatusCode} {response.ReasonPhrase} {Environment.NewLine}{res}");
-                //}
-
                 var res = await graphClient.Education
                     .SynchronizationProfiles[syncProfileId]
                     .Start()
@@ -360,7 +310,6 @@ namespace Proge.Teams.Edu.GraphApi
             try
             {
                 await EnsureUnpToken();
-                //HttpResponseMessage response = await unpClient.GetAsync($"https://graph.microsoft.com/beta/education/synchronizationProfiles/{syncProfileId}/profileStatus");
                 Beta.EducationSynchronizationProfileStatus status = await graphClient.Education
                     .SynchronizationProfiles[syncProfileId]
                     .ProfileStatus
@@ -368,16 +317,6 @@ namespace Proge.Teams.Edu.GraphApi
                     .GetAsync();
 
                 return status;
-
-                //string res = await response.Content.ReadAsStringAsync();
-                //if (response.IsSuccessStatusCode)
-                //{
-                //    return (true, res);
-                //}
-                //else
-                //{
-                //    return (false, $"{(int)response.StatusCode} {response.ReasonPhrase} {Environment.NewLine}{res}");
-                //}
             }
             catch (Exception ex)
             {
@@ -395,22 +334,10 @@ namespace Proge.Teams.Edu.GraphApi
             try
             {
                 await EnsureUnpToken();
-                //HttpContent emptyContent = new StringContent(string.Empty, Encoding.Default, "application/json");
-                //HttpResponseMessage response = await unpClient.DeleteAsync($"https://graph.microsoft.com/beta/education/synchronizationProfiles/{syncProfileId}");
                 await graphClient.Education
                     .SynchronizationProfiles[syncProfileId]
                     .Request()
                     .DeleteAsync();
-
-                //string res = await response.Content.ReadAsStringAsync();
-                //if (response.IsSuccessStatusCode)
-                //{
-                //    return (true, res);
-                //}
-                //else
-                //{
-                //    return (false, $"{(int)response.StatusCode} {response.ReasonPhrase} {Environment.NewLine}{res}");
-                //}
             }
             catch (Exception ex)
             {
@@ -428,23 +355,11 @@ namespace Proge.Teams.Edu.GraphApi
             try
             {
                 await EnsureUnpToken();
-                //HttpContent emptyContent = new StringContent(string.Empty, Encoding.Default, "application/json");
-                //HttpResponseMessage response = await unpClient.PostAsync($"https://graph.microsoft.com/beta/education/synchronizationProfiles/{syncProfileId}/Reset", emptyContent);
                 await graphClient.Education
                     .SynchronizationProfiles[syncProfileId]
                     .Reset()
                     .Request()
                     .PostAsync();
-
-                //string res = await response.Content.ReadAsStringAsync();
-                //if (response.IsSuccessStatusCode)
-                //{
-                //    return (true, res);
-                //}
-                //else
-                //{
-                //    return (false, $"{(int)response.StatusCode} {response.ReasonPhrase} {Environment.NewLine}{res}");
-                //}
             }
             catch (Exception ex)
             {
@@ -462,23 +377,11 @@ namespace Proge.Teams.Edu.GraphApi
             try
             {
                 await EnsureUnpToken();
-                //HttpContent emptyContent = new StringContent(string.Empty, Encoding.Default, "application/json");
-                //HttpResponseMessage response = await unpClient.PostAsync($"https://graph.microsoft.com/beta/education/synchronizationProfiles/{syncProfileId}/Pause", emptyContent);
                 await graphClient.Education
                     .SynchronizationProfiles[syncProfileId]
                     .Pause()
                     .Request()
                     .PostAsync();
-
-                //string res = await response.Content.ReadAsStringAsync();
-                //if (response.IsSuccessStatusCode)
-                //{
-                //    return (true, res);
-                //}
-                //else
-                //{
-                //    return (false, $"{(int)response.StatusCode} {response.ReasonPhrase} {Environment.NewLine}{res}");
-                //}
             }
             catch (Exception ex)
             {
@@ -496,23 +399,11 @@ namespace Proge.Teams.Edu.GraphApi
             try
             {
                 await EnsureUnpToken();
-                //HttpContent emptyContent = new StringContent(string.Empty, Encoding.Default, "application/json");
-                //HttpResponseMessage response = await unpClient.PostAsync($"https://graph.microsoft.com/beta/education/synchronizationProfiles/{syncProfileId}/Resume", emptyContent);
                 await graphClient.Education
                     .SynchronizationProfiles[syncProfileId]
                     .Resume()
                     .Request()
                     .PostAsync();
-
-                //string res = await response.Content.ReadAsStringAsync();
-                //if (response.IsSuccessStatusCode)
-                //{
-                //    return (true, res);
-                //}
-                //else
-                //{
-                //    return (false, $"{(int)response.StatusCode} {response.ReasonPhrase} {Environment.NewLine}{res}");
-                //}
             }
             catch (Exception ex)
             {
@@ -532,57 +423,15 @@ namespace Proge.Teams.Edu.GraphApi
                 await EnsureUnpToken();
                 HttpResponseMessage response = await unpClient.GetAsync($"https://graph.microsoft.com/beta/education/synchronizationProfiles/{syncProfileId}/errors");
 
-                var errors = await graphClient.Education
-                    //.SynchronizationProfiles[$"{syncProfileId}"]
+                var errors = await graphClient.Education                   
                     .SynchronizationProfiles[syncProfileId]
                     .Errors
                     .Request()
                     .GetAsync();
 
                 List<Beta.EducationSynchronizationError> errorList = errors.ToList();
-
                 return errorList;
 
-                //string res = await response.Content.ReadAsStringAsync();
-                //if (response.IsSuccessStatusCode)
-                //{
-                //    return (true, res);
-                //}
-                //else
-                //{
-                //    return (false, $"{(int)response.StatusCode} {response.ReasonPhrase} {Environment.NewLine}{res}");
-                //}
-
-
-
-
-                ////*** ToTest: Output built with NextPageRequest code implementation start
-                //await EnsureUnpToken();
-                ////HttpResponseMessage response = await unpClient.GetAsync($"https://graph.microsoft.com/beta/education/synchronizationProfiles/{syncProfileId}/errors");
-                //List<Beta.EducationSynchronizationError> errorList = new List<Beta.EducationSynchronizationError>();
-
-                //var errors = await graphClient.Education
-                //    .SynchronizationProfiles[syncProfileId]
-                //    .Errors
-                //    .Request()
-                //    .GetAsync();
-
-                //while (errors.Count > 0)
-                //{
-                //    errorList.AddRange(errors);
-                //    if (errors.NextPageRequest != null)
-                //    {
-                //        errors = await errors.NextPageRequest
-                //            .GetAsync();
-                //    }
-                //    else
-                //    {
-                //        break;
-                //    }
-                //}
-
-                //return errorList;
-                //*** Output built with NextPageRequest code implementation end
             }
             catch (Exception ex)
             {

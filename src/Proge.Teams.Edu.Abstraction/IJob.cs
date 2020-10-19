@@ -8,9 +8,7 @@ namespace Proge.Teams.Edu.Abstraction
 {
     public interface IJob
     {
-        Task<IEnumerable<IEducationalClassTeam>> Read();
-        Task Validate(IEnumerable<IEducationalClassTeam> insegnamenti);
-        Task Write(IEnumerable<IEducationalClassTeam> insegnamenti);
-        Task GetFeedback();
+        Task<IEnumerable<IEducationalClassTeam>> Read();       
+        Task Write(IEnumerable<IEducationalClassTeam> insegnamenti);       
     }
 }

@@ -3,6 +3,7 @@ using Microsoft.Extensions.Options;
 using Microsoft.Graph;
 using Microsoft.Graph.Auth;
 using Microsoft.Identity.Client;
+using Newtonsoft.Json.Linq;
 using Proge.Teams.Edu.Abstraction;
 using Proge.Teams.Edu.GraphApi.Models;
 using System;
@@ -12,6 +13,7 @@ using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Security.Authentication;
 using System.Text;
+using System.Text.Json;
 using System.Threading.Tasks;
 
 
@@ -25,7 +27,16 @@ namespace Proge.Teams.Edu.GraphApi
         private ClientCredentialProvider authProvider { get; set; }
         private GraphServiceClient graphClient { get; set; }
         private AuthenticationResult authenticationResult { get; set; }
+        private string _httpToken { get; set; }        
         private readonly ILogger<GraphApiManager> _logger;
+        private static readonly HttpClient httpClient = new HttpClient();
+
+        private static JsonSerializerOptions DefaultSerializerOption = new JsonSerializerOptions
+        {
+            IgnoreNullValues = true,
+            PropertyNameCaseInsensitive = true
+        };
+
 
         public GraphApiManager(IOptions<AuthenticationConfig> authCfg, ILogger<GraphApiManager> logger)
         {
@@ -50,6 +61,19 @@ namespace Proge.Teams.Edu.GraphApi
                 // Login Azure AD
                 authenticationResult = await app.AcquireTokenForClient(_authenticationConfig.ScopeList)
                     .ExecuteAsync();
+
+                // Setting client default request headers
+                _httpToken = authenticationResult.AccessToken;
+                if (httpClient.DefaultRequestHeaders.Contains("Authentication"))
+                {
+                    httpClient.DefaultRequestHeaders.Remove("Authentication");
+                }
+                httpClient.DefaultRequestHeaders.Add("Authentication", $"Bearer {this._httpToken}");
+                if (httpClient.DefaultRequestHeaders.Contains("Authorization"))
+                {
+                    httpClient.DefaultRequestHeaders.Remove("Authorization");
+                }
+                httpClient.DefaultRequestHeaders.Add("Authorization", $"Bearer {this._httpToken}");
             }
             catch (MsalServiceException ex)
             {
@@ -58,6 +82,25 @@ namespace Proge.Teams.Edu.GraphApi
                 // Mitigation: change the scope to be as expected
                 throw ex;
             }
+        }
+
+        //private async Task<bool> EnsureUnpToken()
+        private bool EnsureUnpToken()
+        {
+            if (string.IsNullOrWhiteSpace(_httpToken))
+            {
+                throw new System.Security.Authentication.AuthenticationException("'Username & pwd' token is empty");
+            }
+            //else
+            //{
+            //    if (DateTime.Now < dtFirstStart.AddSeconds(3600) && DateTime.Now > dtNextConnRefresh)
+            //    {
+            //        await this.ConnectWithUnp();
+            //        dtNextConnRefresh = dtNextConnRefresh.AddSeconds(connRefrSeconds);
+            //    }
+            //}
+
+            return true;
         }
 
         /// <summary>
@@ -653,6 +696,49 @@ namespace Proge.Teams.Edu.GraphApi
             await graphClient.Education.Classes[$"{id}"]
              .Request()
              .DeleteAsync();
+        }
+
+        /// <summary>
+        /// Retrieve a list of recently deleted groups.
+        /// </summary>
+        /// <param name="mailNickname">The SMTP address for the group.</param>
+        /// <returns>collection of Microsoft.Graph.DirectoryObject.</returns>
+        public async Task<IEnumerable<DirectoryObject>> GetRecentlyDeletedGroupsByMailNickname(string mailNickname)
+        {
+            try
+            {
+                string filter = $"mailNickname eq '{mailNickname}'";
+                //var deletedGroups = await graphClient.Directory.DeletedItems
+                //    .Request()
+                //    .Filter(filter)
+                //    .GetAsync();
+
+                //var deletedGroups = await graphClient.Directory.DeletedItems["microsoft.graph.group"]
+                //    .Request()
+                //    //.Filter(filter)
+                //    .GetAsync();
+
+                //return deletedGroups;
+
+                EnsureUnpToken();
+                HttpResponseMessage response = await httpClient.GetAsync($"https://graph.microsoft.com/v1.0/directory/deletedItems/microsoft.graph.group?$Filter={filter}");
+
+                string sResponse = await response.Content.ReadAsStringAsync();
+                if (response.IsSuccessStatusCode)
+                {
+                    var dirObjCollection = JsonSerializer.Deserialize<IEnumerable<DirectoryObject>>(JObject.Parse(sResponse)["value"].ToString(), DefaultSerializerOption);
+
+                    return dirObjCollection;
+                }
+                else
+                {
+                    throw new Exception($"{(int)response.StatusCode} {response.ReasonPhrase} {Environment.NewLine}{sResponse}");
+                }
+            }
+            catch (Exception ex)
+            {
+                throw ex;
+            }
         }
 
         /// <summary>

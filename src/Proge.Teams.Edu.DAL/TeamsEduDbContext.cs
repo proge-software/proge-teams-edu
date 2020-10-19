@@ -22,6 +22,7 @@ namespace Proge.Teams.Edu.DAL
         public DbSet<Log> Logs { get; set; }
         public DbSet<LatestLog> LatestLogs { get; set; }
         public DbSet<TeamWithMemeber> TeamsWithMemeber { get; set; }
+        public DbSet<ChangeNotification> ChangeNotification { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -33,8 +34,7 @@ namespace Proge.Teams.Edu.DAL
             modelBuilder.ApplyConfiguration(LogConfiguration.Default);
             modelBuilder.ApplyConfiguration(LatestLogConfiguration.Default);
             modelBuilder.ApplyConfiguration(TeamWithMemeberConfiguration.Default);
-
-
+            modelBuilder.ApplyConfiguration(ChangeNotificationConfiguration.Default);
         }
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)

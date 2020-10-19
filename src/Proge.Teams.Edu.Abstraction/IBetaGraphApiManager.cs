@@ -1,9 +1,7 @@
 ﻿extern alias BetaLib;
-using Beta = BetaLib.Microsoft.Graph;
 using System;
-using System.Collections.Generic;
-using System.Text;
 using System.Threading.Tasks;
+using Beta = BetaLib.Microsoft.Graph;
 
 namespace Proge.Teams.Edu.Abstraction
 {
@@ -12,5 +10,8 @@ namespace Proge.Teams.Edu.Abstraction
         Task ConnectAsApplication();
         Beta.Team DefaultTeamFactory(string groupId);
         Task<Beta.Team> GetTeam(string id);
+        Task<Beta.Subscription> AddSubscription(string changeType, string resource, DateTimeOffset? expirationOffset, string clientStateSecret, string notificationUrl);
+        Task RenewSubscription(string id);
+        Task<bool> GetSubscriptions();
     }
 }

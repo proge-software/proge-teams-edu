@@ -6,8 +6,7 @@ using System.Threading.Tasks;
 namespace Proge.Teams.Edu.Abstraction
 {
     public interface IFacade 
-    {
-        Task Configure();
+    {       
         Task StartJob();
     }
 }
