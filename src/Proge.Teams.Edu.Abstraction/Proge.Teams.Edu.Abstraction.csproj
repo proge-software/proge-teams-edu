@@ -3,7 +3,7 @@
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
     <LangVersion>8.0</LangVersion>
-    <Version>1.0.1</Version>
+    <Version>1.0.2</Version>
     <Authors>Francesco Venturini</Authors>
     <Company>Proge-Software</Company>
     <PackageDescription>Base project for Teams integration</PackageDescription>
@@ -12,8 +12,8 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Microsoft.Graph" Version="3.18.0" />
-    <PackageReference Include="Microsoft.Graph.Beta" Version="0.30.0-preview" />
+    <PackageReference Include="Microsoft.Graph" Version="3.19.0" />
+    <PackageReference Include="Microsoft.Graph.Beta" Version="0.32.0-preview" />
   </ItemGroup>
   <Target Name="ChangeAliasesOfStrongNameAssemblies" BeforeTargets="FindReferenceAssembliesForReferences;ResolveReferences">
     <ItemGroup>
