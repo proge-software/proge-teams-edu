@@ -1,4 +1,5 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using EFCore.BulkExtensions;
+using Microsoft.EntityFrameworkCore;
 using Proge.Teams.Edu.DAL.Entities;
 using System;
 using System.Collections.Generic;
@@ -36,6 +37,10 @@ namespace Proge.Teams.Edu.DAL.Repositories
         Task<bool> SaveAsync(CancellationToken cancellationToken = default);
         void Update<TEntity>(TEntity entity) where TEntity : class;
         void Detach<TEntity>(TEntity entity) where TEntity : class;
+
+        Task BulkInsertOrUpdateAsync<TEntity>(IList<TEntity> list) where TEntity : class;
+        Task BulkDeleteAsync<TEntity>(IList<TEntity> list) where TEntity : class;
+        void BulkDelete<TEntity>(IList<TEntity> list) where TEntity : class;
 
         IQueryable<T> _defaultCollection<T>() where T : BaseEntity;
         IQueryable<T> _defaultCollectionWithDeleted<T>() where T : BaseEntity;
@@ -169,6 +174,37 @@ namespace Proge.Teams.Edu.DAL.Repositories
         public virtual async Task<TEntity> CreateAsync<TEntity>(TEntity entity) where TEntity : class
         {
             return (await _dbContext.Set<TEntity>().AddAsync(entity)).Entity;
+        }
+
+        public virtual async Task BulkInsertOrUpdateAsync<TEntity>(IList<TEntity> list) where TEntity : class
+        {
+            await _dbContext.BulkInsertOrUpdateAsync<TEntity>(list);
+        }
+
+        /// <summary>
+        /// Not working
+        /// </summary>
+        /// <typeparam name="TEntity"></typeparam>
+        /// <param name="list"></param>
+        /// <returns></returns>
+        public virtual async Task BulkDeleteAsync<TEntity>(IList<TEntity> list) where TEntity : class
+        {
+            await _dbContext.BulkDeleteAsync<TEntity>(list);
+            //CancellationTokenSource tcs = new CancellationTokenSource();
+            //CancellationToken token = tcs.Token;
+            //BulkConfig bulkCfg = null;
+            //await _dbContext.BulkDeleteAsync<TEntity>(list, bulkCfg, null, token);
+            //tcs.Cancel();
+        }
+
+        /// <summary>
+        /// Not working
+        /// </summary>
+        /// <typeparam name="TEntity"></typeparam>
+        /// <param name="list"></param>
+        public virtual void BulkDelete<TEntity>(IList<TEntity> list) where TEntity : class
+        {
+            _dbContext.BulkDelete<TEntity>(list);
         }
 
         public virtual void Update<TEntity>(TEntity entity) where TEntity : class

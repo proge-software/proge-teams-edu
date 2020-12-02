@@ -13,5 +13,6 @@ namespace Proge.Teams.Edu.Abstraction
         Task<Beta.Subscription> AddSubscription(string changeType, string resource, DateTimeOffset? expirationOffset, string clientStateSecret, string notificationUrl);
         Task RenewSubscription(string id);
         Task<bool> GetSubscriptions();
+        Task<Beta.CallRecords.CallRecord> GetCallRecord(string callId);
     }
 }

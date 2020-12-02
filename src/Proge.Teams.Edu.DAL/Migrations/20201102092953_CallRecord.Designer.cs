@@ -3,15 +3,17 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Proge.Teams.Edu.DAL;
 
 namespace Proge.Teams.Edu.DAL.Migrations
 {
     [DbContext(typeof(TeamsEduDbContext))]
-    partial class UniMoReDbContextModelSnapshot : ModelSnapshot
+    [Migration("20201102092953_CallRecord")]
+    partial class CallRecord
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -26,8 +28,8 @@ namespace Proge.Teams.Edu.DAL.Migrations
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<string>("CallDescription")
-                        .HasColumnType("nvarchar(450)")
-                        .HasMaxLength(450);
+                        .HasColumnType("nvarchar(200)")
+                        .HasMaxLength(200);
 
                     b.Property<DateTimeOffset?>("EndDateTime")
                         .HasColumnType("datetimeoffset");
@@ -369,25 +371,6 @@ namespace Proge.Teams.Edu.DAL.Migrations
                     b.HasIndex("MemberType");
 
                     b.ToTable("TeamMembers");
-                });
-
-            modelBuilder.Entity("Proge.Teams.Edu.DAL.Entities.TeamsMeeting", b =>
-                {
-                    b.Property<string>("JoinUrl")
-                        .HasColumnType("nvarchar(450)")
-                        .HasMaxLength(450);
-
-                    b.Property<string>("MeetingId")
-                        .HasColumnType("nvarchar(150)")
-                        .HasMaxLength(150);
-
-                    b.Property<string>("MeetingName")
-                        .HasColumnType("nvarchar(450)")
-                        .HasMaxLength(450);
-
-                    b.HasKey("JoinUrl");
-
-                    b.ToTable("TeamsMeeting");
                 });
 
             modelBuilder.Entity("Proge.Teams.Edu.DAL.Entities.CallSegment", b =>

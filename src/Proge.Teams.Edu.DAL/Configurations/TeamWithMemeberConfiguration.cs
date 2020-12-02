@@ -15,7 +15,6 @@ namespace Proge.Teams.Edu.DAL.Configurations
         {
             builder.HasNoKey();
             builder.ToView("TeamsWithMemeber");
-
         }
 
     }

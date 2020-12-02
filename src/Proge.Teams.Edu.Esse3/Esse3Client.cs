@@ -21,13 +21,36 @@ namespace Proge.Teams.Edu.Esse3
     public interface IEsse3Client
     {
         /// <summary>
+        /// Offerta didattica dei corsi di studio in un dato anno.
+        /// </summary>
+        /// <param name="aaOffId">Id dell'anno di offerta.</param>
+        /// <returns></returns>
+        Task<IEnumerable<Offerta>> GetOfferte(int aaOffId);
+        /// <summary>
+        /// Attività didattiche esposte nell'offerta didattica di un dato anno per un dato corso di studio.
+        /// </summary>
+        /// <param name="aaOffId">Id dell'anno di offerta.</param>
+        /// <param name="cdsOffId">Id del corso di studio.</param>
+        /// <returns></returns>
+        Task<IEnumerable<ADContestualizzata>> GetADOfferta(int aaOffId, Int64 cdsOffId);
+        /// <summary>
+        /// Recupera le informazioni sulle Ablitazioni dei docenti.
+        /// </summary>
+        /// <param name="cdsAbilId">Id del corso di studio di erogazione dell'esame comune.</param>
+        /// <param name="cdsAbilCod">Codice del corso di studio di erogazione dell'esame comune.</param>
+        /// <param name="adAbilId">Id dell'attività didattica di erogazione dell'esame comune.</param>
+        /// <param name="adAbilCod">Codice dell'attività didattica di erogazione dell'esame comune.</param>
+        /// <param name="aaOffAbilId">Anno di definizione dell'esame comune.</param>
+        /// <returns></returns>
+        Task<IEnumerable<AbilitazioniDocente>> GetAbilitazioni(Int64? cdsAbilId = null, string cdsAbilCod = null, Int64? adAbilId = null, string adAbilCod = null, int? aaOffAbilId = null);
+        /// <summary>
         /// Restituisce la lista degli appelli
         /// </summary>
         /// <param name="cdsId">id del corso di studio di erogazione dell'appello</param>
-        /// <param name="addId">id del corso di studio di erogazione dell'appello</param>
+        /// <param name="adId">id dell'attività didattica di erogazione dell'appello</param>
         /// <param name="aaCalId">anno di definizione del calendario esami</param>
         /// <returns></returns>
-        Task<IEnumerable<AppelloCustom>> GetAppelli(string cdsId, string addId, string aaCalId = null);
+        Task<IEnumerable<AppelloCustom>> GetAppelli(string cdsId, string adId, string aaCalId = null);
         Task<AppelloCustom> GetAppello(int cdsId, int addId, int appId);
         Task<IEnumerable<AppelloIscritto>> GetAppelloIscritti(int cdsId, int adId, int appId);
         Task<IEnumerable<AppelloCommissione>> GetAppelloCommissione(int cdsId, int adId, int appId);
@@ -36,6 +59,29 @@ namespace Proge.Teams.Edu.Esse3
         Task<Persona> GetPersona(string personaId);
         Task<AppelloCustom> GetSessione(int aaSesId);
         Task<IEnumerable<Utente>> GetUtente(string personaId);
+        /// <summary>
+        /// Dettagli della logistica per anno di offerta, corso di studio, ordinamento, percorso di studio ed attività didattica.
+        /// </summary>
+        /// <param name="aaOffId">Id dell'anon di offerta.</param>
+        /// <param name="cdsOffId">Id del corso di studio.</param>
+        /// <param name="aaOrdId">Id dell'ordinamento.</param>
+        /// <param name="pdsId">Id del percorso di studio.</param>
+        /// <param name="adId">Id dell'attività didattica.</param>
+        /// <returns></returns>
+        Task<IEnumerable<DettaglioLogistica>> GetDettagliLogistica(int aaOffId, Int64 cdsOffId, int? aaOrdId = null, Int64? pdsId = null, Int64? adId = null, string adCod = null);
+        /// <summary>
+        /// Tratti carriera che contengono libretti.
+        /// </summary>
+        /// <param name="cdsStuId">Id del corso di studio di appartenenza dello studente.</param>
+        /// <param name="staStuCod">Codice dello stato della carriera a cui si riferisce il libretto.</param>
+        /// <returns></returns>
+        Task<IEnumerable<TrattoCarriera>> GetTrattiCarriera(Int64? cdsStuId = null, string staStuCod = null);
+        /// <summary>
+        /// Tutte le attività del libretto del tratto di carriera selezionato.
+        /// </summary>
+        /// <param name="matId">Id del tratto di carriera per cui recuperare il libretto.</param>
+        /// <returns></returns>
+        Task<IEnumerable<RigaLibretto>> GetDettaglioADStudente(Int64 matId);
         Task<Login> Login();
     }
 
@@ -74,17 +120,116 @@ namespace Proge.Teams.Edu.Esse3
             }
         }
 
-        #region Calesa
+        #region Offerta V1
+        /// <summary>
+        /// Offerta didattica dei corsi di studio in un dato anno.
+        /// </summary>
+        /// <param name="aaOffId">Id dell'anno di offerta.</param>
+        /// <returns></returns>
+        public async Task<IEnumerable<Offerta>> GetOfferte(int aaOffId)
+        {
+            string url = $"{_esse3Settings.WsBaseUrl}/api/offerta-service-v1/offerte";
+            var requestMessage = RequestMessageFactory(HttpMethod.Get, url, $"aaOffId={aaOffId}");
+            var response = await client.SendAsync(requestMessage);
+
+            response.EnsureSuccessStatusCode();
+            string res = await response.Content.ReadAsStringAsync();
+
+            try
+            {
+                return JsonSerializer.Deserialize<IEnumerable<Offerta>>(res, DefaultSerializerOption);
+            }
+            catch (JsonException ex) // Invalid JSON
+            {
+                //Console.WriteLine(ex.ToString());
+                throw ex;
+            }
+        }
+
+        /// <summary>
+        /// Attività didattiche esposte nell'offerta didattica di un dato anno per un dato corso di studio.
+        /// </summary>
+        /// <param name="aaOffId">Id dell'anno di offerta.</param>
+        /// <param name="cdsOffId">Id del corso di studio.</param>
+        /// <returns></returns>
+        public async Task<IEnumerable<ADContestualizzata>> GetADOfferta(int aaOffId, Int64 cdsOffId)
+        {
+            string url = $"{_esse3Settings.WsBaseUrl}/api/offerta-service-v1/offerte/{aaOffId}/{cdsOffId}/attivita";
+            var requestMessage = RequestMessageFactory(HttpMethod.Get, url);
+            var response = await client.SendAsync(requestMessage);
+
+            response.EnsureSuccessStatusCode();
+            string res = await response.Content.ReadAsStringAsync();
+            try
+            {
+                return JsonSerializer.Deserialize<IEnumerable<ADContestualizzata>>(res, DefaultSerializerOption);
+            }
+            catch (JsonException ex) // Invalid JSON
+            {
+                //Console.WriteLine(ex.ToString());
+                throw ex;
+            }
+        }
+        #endregion
+
+        #region Calesa V1
+        /// <summary>
+        /// Recupera le informazioni sulle Ablitazioni dei docenti.
+        /// </summary>
+        /// <param name="cdsAbilId">Id del corso di studio di erogazione dell'esame comune.</param>
+        /// <param name="cdsAbilCod">Codice del corso di studio di erogazione dell'esame comune.</param>
+        /// <param name="adAbilId">Id dell'attività didattica di erogazione dell'esame comune.</param>
+        /// <param name="adAbilCod">Codice dell'attività didattica di erogazione dell'esame comune.</param>
+        /// <param name="aaOffAbilId">Anno di definizione dell'esame comune.</param>
+        /// <returns></returns>
+        public async Task<IEnumerable<AbilitazioniDocente>> GetAbilitazioni(Int64? cdsAbilId = null, string cdsAbilCod = null, Int64? adAbilId = null, string adAbilCod = null, int? aaOffAbilId = null)
+        {
+            string url = $"{_esse3Settings.WsBaseUrl}/api/calesa-service-v1/abilitazioni";
+
+            var requestMessage = new HttpRequestMessage();
+
+            List<string> qString = new List<string>();
+            if (cdsAbilId.HasValue)
+                qString.Add($"cdsAbilId={cdsAbilId.Value}");
+            if (!string.IsNullOrWhiteSpace(cdsAbilCod))
+                qString.Add($"cdsAbilCod={cdsAbilCod}");
+            if (adAbilId.HasValue)
+                qString.Add($"adAbilId={adAbilId.Value}");
+            if (!string.IsNullOrWhiteSpace(adAbilCod))
+                qString.Add($"adAbilCod={adAbilCod}");
+            if (aaOffAbilId.HasValue)
+                qString.Add($"aaOffAbilId={aaOffAbilId.Value}");
+
+            if (qString.Any())
+                requestMessage = RequestMessageFactory(HttpMethod.Get, url, qString.ToArray());
+            else
+                requestMessage = RequestMessageFactory(HttpMethod.Get, url);
+
+            var response = await client.SendAsync(requestMessage);
+
+            response.EnsureSuccessStatusCode();
+            string res = await response.Content.ReadAsStringAsync();
+            try
+            {
+                return JsonSerializer.Deserialize<IEnumerable<AbilitazioniDocente>>(res, DefaultSerializerOption);
+            }
+            catch (JsonException ex) // Invalid JSON
+            {
+                //Console.WriteLine(ex.ToString());
+                throw ex;
+            }
+        }
+
         /// <summary>
         /// Restituisce la lista degli appelli
         /// </summary>
         /// <param name="cdsId">id del corso di studio di erogazione dell'appello</param>
-        /// <param name="addId">id del corso di studio di erogazione dell'appello</param>
+        /// <param name="adId">id dell'attività didattica di erogazione dell'appello</param>
         /// <param name="aaCalId">anno di definizione del calendario esami</param>
         /// <returns></returns>
-        public async Task<IEnumerable<AppelloCustom>> GetAppelli(string cdsId, string addId, string aaCalId = null)
+        public async Task<IEnumerable<AppelloCustom>> GetAppelli(string cdsId, string adId, string aaCalId = null)
         {
-            string url = $"{_esse3Settings.WsBaseUrl}/api/calesa-service-v1/appelli/{cdsId}/{addId}";
+            string url = $"{_esse3Settings.WsBaseUrl}/api/calesa-service-v1/appelli/{cdsId}/{adId}";
             var requestMessage = RequestMessageFactory(HttpMethod.Get, url, $"aaCalId={aaCalId}");
             var response = await client.SendAsync(requestMessage);
 
@@ -101,7 +246,6 @@ namespace Proge.Teams.Edu.Esse3
                 throw ex;
             }
         }
-
 
         /// <summary>
         /// 
@@ -265,6 +409,119 @@ namespace Proge.Teams.Edu.Esse3
         }
         #endregion
 
+        #region Logistica V1
+        /// <summary>
+        /// Dettagli della logistica per anno di offerta, corso di studio, ordinamento, percorso di studio ed attività didattica.
+        /// </summary>
+        /// <param name="aaOffId">Id dell'anon di offerta.</param>
+        /// <param name="cdsOffId">Id del corso di studio.</param>
+        /// <param name="aaOrdId">Id dell'ordinamento.</param>
+        /// <param name="pdsId">Id del percorso di studio.</param>
+        /// <param name="adId">Id dell'attività didattica.</param>
+        /// <returns></returns>
+        public async Task<IEnumerable<DettaglioLogistica>> GetDettagliLogistica(int aaOffId, Int64 cdsOffId, 
+            int? aaOrdId = null, Int64? pdsId = null, Int64? adId = null, string adCod = null)
+        {
+            string url = $"{_esse3Settings.WsBaseUrl}/api/logistica-service-v1/logisticaPerOdFull/{aaOffId}/{cdsOffId}/";
+
+            var requestMessage = new HttpRequestMessage();
+
+            List<string> qString = new List<string>();
+            if (aaOrdId.HasValue)
+                qString.Add($"aaOrdId={aaOrdId.Value}");
+            if (pdsId.HasValue)
+                qString.Add($"pdsId={pdsId.Value}");
+            if (adId.HasValue)
+                qString.Add($"adId={adId.Value}");
+            if (!string.IsNullOrWhiteSpace(adCod))
+                qString.Add($"adCod={adCod}");
+
+            if (qString.Any())
+                requestMessage = RequestMessageFactory(HttpMethod.Get, url, qString.ToArray());
+            else
+                requestMessage = RequestMessageFactory(HttpMethod.Get, url);
+
+            var response = await client.SendAsync(requestMessage);
+
+            response.EnsureSuccessStatusCode();
+            string res = await response.Content.ReadAsStringAsync();
+            try
+            {
+                return JsonSerializer.Deserialize<IEnumerable<DettaglioLogistica>>(res, DefaultSerializerOption);
+            }
+            catch (JsonException ex) // Invalid JSON
+            {
+                //Console.WriteLine(ex.ToString());
+                throw ex;
+            }
+        }
+        #endregion
+
+        #region Libretto V2
+        /// <summary>
+        /// Tratti carriera che contengono libretti.
+        /// </summary>
+        /// <param name="cdsStuId">Id del corso di studio di appartenenza dello studente.</param>
+        /// <param name="staStuCod">Codice dello stato della carriera a cui si riferisce il libretto.</param>
+        /// <returns></returns>
+        public async Task<IEnumerable<TrattoCarriera>> GetTrattiCarriera(Int64? cdsStuId = null, string staStuCod = null)
+        {
+            string url = $"{_esse3Settings.WsBaseUrl}/api/libretto-service-v2/libretti/";
+
+            var requestMessage = new HttpRequestMessage();
+
+            List<string> qString = new List<string>();
+            if (cdsStuId.HasValue)
+                qString.Add($"cdsStuId={cdsStuId.Value}");
+            if (!string.IsNullOrWhiteSpace(staStuCod))
+                qString.Add($"staStuCod={staStuCod}");            
+
+            if (qString.Any())
+                requestMessage = RequestMessageFactory(HttpMethod.Get, url, qString.ToArray());
+            else
+                requestMessage = RequestMessageFactory(HttpMethod.Get, url);
+
+            var response = await client.SendAsync(requestMessage);
+
+            response.EnsureSuccessStatusCode();
+            string res = await response.Content.ReadAsStringAsync();
+
+            try
+            {
+                return JsonSerializer.Deserialize<IEnumerable<TrattoCarriera>>(res, DefaultSerializerOption);
+            }
+            catch (JsonException ex) // Invalid JSON
+            {
+                //Console.WriteLine(ex.ToString());
+                throw ex;
+            }
+        }
+
+        /// <summary>
+        /// Tutte le attività del libretto del tratto di carriera selezionato.
+        /// </summary>
+        /// <param name="matId">Id del tratto di carriera per cui recuperare il libretto.</param>
+        /// <returns></returns>
+        public async Task<IEnumerable<RigaLibretto>> GetDettaglioADStudente(Int64 matId)
+        {
+            string url = $"{_esse3Settings.WsBaseUrl}/api/libretto-service-v2/libretti/{matId}/righe";
+            var requestMessage = RequestMessageFactory(HttpMethod.Get, url);
+            var response = await client.SendAsync(requestMessage);
+
+            response.EnsureSuccessStatusCode();
+            string res = await response.Content.ReadAsStringAsync();
+
+            try
+            {
+                return JsonSerializer.Deserialize<IEnumerable<RigaLibretto>>(res, DefaultSerializerOption);
+            }
+            catch (JsonException ex) // Invalid JSON
+            {
+                //Console.WriteLine(ex.ToString());
+                throw ex;
+            }
+        }
+        #endregion
 
         private HttpRequestMessage RequestMessageFactory(HttpMethod httpMethod, string url, params string[] queryString)
         {
