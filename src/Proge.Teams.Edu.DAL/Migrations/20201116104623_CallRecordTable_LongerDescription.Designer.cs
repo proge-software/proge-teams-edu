@@ -3,15 +3,17 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Proge.Teams.Edu.DAL;
 
 namespace Proge.Teams.Edu.DAL.Migrations
 {
     [DbContext(typeof(TeamsEduDbContext))]
-    partial class UniMoReDbContextModelSnapshot : ModelSnapshot
+    [Migration("20201116104623_CallRecordTable_LongerDescription")]
+    partial class CallRecordTable_LongerDescription
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder

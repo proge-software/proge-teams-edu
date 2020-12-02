@@ -29,14 +29,10 @@ namespace Proge.Teams.Edu.DAL.Configurations
                  .IsRequired();
             ;
 
-
             builder.Property(a => a.MemberType)
                 .HasConversion<string>();
 
             builder.HasIndex(a => a.MemberType);
-
-
-
         }
 
     }

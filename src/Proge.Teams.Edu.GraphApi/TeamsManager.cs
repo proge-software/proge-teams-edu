@@ -197,7 +197,7 @@ namespace Proge.Teams.Edu.GraphApi
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogInformation(ex, $"GetJoinCode: Get failed for team InternalId {internalTeamId}.");
+                    _logger.LogWarning(ex, $"GetJoinCode: Get failed for team InternalId {internalTeamId}.");
                     return null;
                 }
             }

@@ -151,6 +151,23 @@ namespace Proge.Teams.Edu.GraphApi
             //}
         }
 
+        public async Task<Beta.CallRecords.CallRecord> GetCallRecord(string callId) 
+        {
+            try
+            {
+                var res = await graphClient.Communications.CallRecords[$"{callId}?$expand=sessions($expand=segments)"]
+                .Request()
+                .GetAsync();
+
+                return res;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, $"GetCallRecord: CallRecord *probably* not found");
+                return null;
+            }
+        }
+
         /// <summary>
         /// Get the properties and relationships of the specified team.
         /// </summary>

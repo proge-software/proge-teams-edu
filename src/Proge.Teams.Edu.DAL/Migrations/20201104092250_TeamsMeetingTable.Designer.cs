@@ -3,15 +3,17 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Proge.Teams.Edu.DAL;
 
 namespace Proge.Teams.Edu.DAL.Migrations
 {
     [DbContext(typeof(TeamsEduDbContext))]
-    partial class UniMoReDbContextModelSnapshot : ModelSnapshot
+    [Migration("20201104092250_TeamsMeetingTable")]
+    partial class TeamsMeetingTable
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -26,8 +28,8 @@ namespace Proge.Teams.Edu.DAL.Migrations
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<string>("CallDescription")
-                        .HasColumnType("nvarchar(450)")
-                        .HasMaxLength(450);
+                        .HasColumnType("nvarchar(200)")
+                        .HasMaxLength(200);
 
                     b.Property<DateTimeOffset?>("EndDateTime")
                         .HasColumnType("datetimeoffset");
@@ -382,8 +384,8 @@ namespace Proge.Teams.Edu.DAL.Migrations
                         .HasMaxLength(150);
 
                     b.Property<string>("MeetingName")
-                        .HasColumnType("nvarchar(450)")
-                        .HasMaxLength(450);
+                        .HasColumnType("nvarchar(200)")
+                        .HasMaxLength(200);
 
                     b.HasKey("JoinUrl");
 

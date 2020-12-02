@@ -23,6 +23,11 @@ namespace Proge.Teams.Edu.DAL
         public DbSet<LatestLog> LatestLogs { get; set; }
         public DbSet<TeamWithMemeber> TeamsWithMemeber { get; set; }
         public DbSet<ChangeNotification> ChangeNotification { get; set; }
+        public DbSet<CallRecord> CallRecord { get; set; }
+        public DbSet<CallUser> CallUser { get; set; }
+        public DbSet<CallSession> CallSession { get; set; }
+        public DbSet<CallSegment> CallSessionSegment { get; set; }
+        public DbSet<TeamsMeeting> TeamsMeeting { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -35,6 +40,11 @@ namespace Proge.Teams.Edu.DAL
             modelBuilder.ApplyConfiguration(LatestLogConfiguration.Default);
             modelBuilder.ApplyConfiguration(TeamWithMemeberConfiguration.Default);
             modelBuilder.ApplyConfiguration(ChangeNotificationConfiguration.Default);
+            modelBuilder.ApplyConfiguration(CallRecordConfiguration.Default);
+            modelBuilder.ApplyConfiguration(CallUserConfiguration.Default);
+            modelBuilder.ApplyConfiguration(CallSessionConfiguration.Default);
+            modelBuilder.ApplyConfiguration(CallSegmentConfiguration.Default);
+            modelBuilder.ApplyConfiguration(TeamsMeetingConfiguration.Default);
         }
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
