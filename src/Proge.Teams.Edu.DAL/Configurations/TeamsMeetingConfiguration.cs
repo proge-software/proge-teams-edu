@@ -1,9 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using Proge.Teams.Edu.DAL.Entities;
-using System;
-using System.Collections.Generic;
-using System.Text;
 
 namespace Proge.Teams.Edu.DAL.Configurations
 {
@@ -23,6 +20,33 @@ namespace Proge.Teams.Edu.DAL.Configurations
 
             builder.Property(p => p.MeetingId)
                 .HasMaxLength(150);
+
+            builder.Property(p => p.MeetingIdPrimary)
+                .HasMaxLength(20);
+
+            builder.Property(p => p.MeetingIdSecondary)
+                .HasMaxLength(20);
+
+            builder.Property(p => p.MeetingExtendedName)
+                .HasMaxLength(255);
+
+            builder.Property(p => p.OwnerExtended)
+                .HasMaxLength(255);
+
+            builder.Property(p => p.OwnerUpn)
+                .HasMaxLength(255);
+
+            builder.Property(p => p.MeetingExtendedAttribute)
+                .HasMaxLength(10);
+
+            builder.Property(p => p.MeetingType)
+                .HasMaxLength(255);
+
+            builder.Property(p => p.MeetingHierarchy)
+                .HasMaxLength(10);
+
+            builder.Property(p => p.CustomAttribute)
+                .HasMaxLength(255);
         }
     }
 }

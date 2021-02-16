@@ -1,0 +1,50 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>netcoreapp3.1</TargetFramework>
+    <AzureFunctionsVersion>v3</AzureFunctionsVersion>
+    <DockerFastModeProjectMountDirectory>/home/site/wwwroot</DockerFastModeProjectMountDirectory>
+    <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
+    <_FunctionsSkipCleanOutput>true</_FunctionsSkipCleanOutput>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Azure.Functions.Extensions" Version="1.1.0" />
+    <PackageReference Include="Microsoft.Azure.WebJobs.Extensions.Storage" Version="4.0.4" />
+    <PackageReference Include="Microsoft.IdentityModel.Protocols.OpenIdConnect" Version="6.8.0" />
+    <PackageReference Include="Microsoft.NET.Sdk.Functions" Version="3.0.11" />
+    <PackageReference Include="Microsoft.VisualStudio.Azure.Containers.Tools.Targets" Version="1.10.9" />
+    <PackageReference Include="Serilog" Version="2.10.0" />
+    <PackageReference Include="Serilog.Extensions.Logging" Version="3.0.1" />
+    <PackageReference Include="Serilog.Settings.Configuration" Version="3.1.0" />
+    <PackageReference Include="Serilog.Sinks.Console" Version="3.1.1" />
+    <PackageReference Include="Serilog.Sinks.MSSqlServer" Version="5.6.0" />
+    <PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="6.8.0" />
+    <PackageReference Include="System.Text.Json" Version="4.7.2" />
+    <PackageReference Include="Microsoft.Graph.Beta" Version="0.37.0-preview" />
+  </ItemGroup>
+  <Target Name="ChangeAliasesOfStrongNameAssemblies" BeforeTargets="FindReferenceAssembliesForReferences;ResolveReferences">
+    <ItemGroup>
+      <ReferencePath Condition="'%(FileName)' == 'Microsoft.Graph.Beta'">
+        <Aliases>BetaLib</Aliases>
+      </ReferencePath>
+    </ItemGroup>
+  </Target>
+  <ItemGroup>
+    <ProjectReference Include="..\Proge.Teams.Edu.DAL\Proge.Teams.Edu.DAL.csproj" />
+    <ProjectReference Include="..\Proge.Teams.Edu.TeamsDashboard\Proge.Teams.Edu.TeamsDashboard.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Update="appsettings.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="appsettings.local.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="host.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="local.settings.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <CopyToPublishDirectory>Never</CopyToPublishDirectory>
+    </None>
+  </ItemGroup>
+</Project>

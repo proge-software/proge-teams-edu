@@ -19,6 +19,4 @@ namespace Proge.Teams.Edu.Abstraction
         IEnumerable<ITeamMember> Members { get; set; }
         IEnumerable<ITeamMember> Owners { get; set; }
     }
-
-    
 }

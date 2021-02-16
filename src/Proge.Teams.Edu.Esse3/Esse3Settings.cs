@@ -10,5 +10,7 @@ namespace Proge.Teams.Edu.Esse3
         public string WsBaseUrl { get; set; }
         public string Username { get; set; }
         public string Password { get; set; }
+        public int RetryDelay { get; set; }
+        public int MaxAttemptCount { get; set; }
     }
 }

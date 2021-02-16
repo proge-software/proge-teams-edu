@@ -149,7 +149,8 @@ namespace Proge.Teams.Edu.DAL.Repositories
 
         public async Task<Team> InsertOrUpdateWMembers(IEducationalClassTeam eduClass)
         {
-            var userInGroup = eduClass.Owners.Concat(eduClass.Members);
+            //var userInGroup = eduClass.Owners.Concat(eduClass.Members);
+            var userInGroup = eduClass.Owners.Concat(eduClass.Members.Where(m => !eduClass.Owners.Select(o => o.AzureAdId).Contains(m.AzureAdId)));
             var userInGroupId = userInGroup.Select(a => new Guid(a.AzureAdId));
             var userInDb = await _dbContext.Members.Where(a => userInGroupId.Contains(a.MemberId)).ToListAsync();
             userInGroup.Where(a => !userInDb.Select(b => b.MemberId).Contains(Guid.Parse(a.AzureAdId)))

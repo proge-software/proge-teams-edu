@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Proge.Teams.Edu.Abstraction
@@ -18,7 +19,7 @@ namespace Proge.Teams.Edu.Abstraction
         Task<Group> CreateGroup(Group group);
         Task<Team> CreateTeam(string groupId, Team team);
         Task<Team> CreateTeam(Team team);
-        Task<TeamsTab> CreateWebTab(string groupId, string chanId, TeamsTab tab);
+        Task<TeamsTab> CreateWebTab(string teamId, string chanId, TeamsTab tab, CancellationToken cancellationToken = default);
         Channel DefaultChannelFactory(string displayName, string description = null);
         EducationClass DefaultEducationalClassFactory(IEducationalClassTeam educationalClassTeam);
         Team DefaultTeamFactory(string groupId);
@@ -32,6 +33,7 @@ namespace Proge.Teams.Edu.Abstraction
         Task<EducationClass> GetEducationClassWGroupWTeam(string id);
         Task<Group> GetGroup(string id);
         Task<IEnumerable<ListItem>> GetListItems(string siteId, string listName);
+        Task<IEnumerable<ListItem>> GetListItemsWithFieldsValues(string siteId, string listId, IEnumerable<QueryOption> queryOptions = null, string filter = null);
         Task<List> GetListSite(string siteId, string listName);
         Task<Site> GetSiteByUri(Uri uri);
         Task<Team> GetTeam(string id);
@@ -49,13 +51,15 @@ namespace Proge.Teams.Edu.Abstraction
         Task UpdateGroupOwners(string groupid, IEnumerable<ITeamMember> newOwners, IEnumerable<DirectoryObject> existingOwners);
         Task<FieldValueSet> UpdateListItem(string siteId, string listName, string itemId, FieldValueSet item);
         Task<Team> UpdateTeam(string groupId, Team team);
-        Task<TeamsTab> UpdateWebTab(string groupId, string chanId, string tabId, TeamsTab tab);
+        Task<TeamsTab> UpdateWebTab(string groupId, string chanId, string tabId, TeamsTab tab, CancellationToken cancellationToken = default);
         Task<ListItem> GetListItem(string siteId, string listName, string itemId);
         Task<IEnumerable<ListItem>> SearchListItemByIndexedField(string siteId, string listName, string field, string value);
+        Task<IEnumerable<ListItem>> SearchListItemDetailsByIndexedField(string siteId, string listName, string columnId, string value);
         Task AddGroupOwners(string groupid, IEnumerable<string> ownerIds, IEnumerable<DirectoryObject> ownersInGroup = null);
         Task AddGroupMembers(string groupid, IEnumerable<string> memeberIds, IEnumerable<DirectoryObject> ownersInGroup = null);
         Task<IEnumerable<DirectoryObject>> GetTeamMembers(string id);
         Task SendMail(string senderEmailAddress, Message message);
+        Task<IEducationalClassTeam> MapTeamOwnerMemberPrincipalName(IEducationalClassTeam insegnamento, Dictionary<string, ITeamMember> userCache);
     }
 
 }

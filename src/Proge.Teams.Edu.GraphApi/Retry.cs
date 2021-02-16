@@ -11,7 +11,7 @@ namespace Proge.Teams.Edu.GraphApi
         public static async Task<T> Do<T>(
           Func<Task<T>> action,
           TimeSpan retryInterval,
-          int maxAttemptCount = 5)
+          int maxAttemptCount = 3)
         {
             var exceptions = new List<Exception>();
             int retryCount = 1;

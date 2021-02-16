@@ -3,15 +3,17 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Proge.Teams.Edu.DAL;
 
 namespace Proge.Teams.Edu.DAL.Migrations
 {
     [DbContext(typeof(TeamsEduDbContext))]
-    partial class UniMoReDbContextModelSnapshot : ModelSnapshot
+    [Migration("20210216165839_TeamsMeeting_NewColumns")]
+    partial class TeamsMeeting_NewColumns
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder

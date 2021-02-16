@@ -9,7 +9,7 @@ namespace Proge.Teams.Edu.Abstraction
     public class AuthenticationConfig
     {
         public int RetryDelay { get; set; }
-
+        
         //public string Instance { get; set; } = "https://login.microsoftonline.com/{0}";
         public string Instance { get; set; } 
 

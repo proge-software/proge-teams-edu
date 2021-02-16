@@ -14,6 +14,7 @@ using System.Net.Http.Headers;
 using System.Security.Authentication;
 using System.Text;
 using System.Text.Json;
+using System.Threading;
 using System.Threading.Tasks;
 
 
@@ -27,7 +28,7 @@ namespace Proge.Teams.Edu.GraphApi
         private ClientCredentialProvider authProvider { get; set; }
         private GraphServiceClient graphClient { get; set; }
         private AuthenticationResult authenticationResult { get; set; }
-        private string _httpToken { get; set; }        
+        private string _httpToken { get; set; }
         private readonly ILogger<GraphApiManager> _logger;
         private static readonly HttpClient httpClient = new HttpClient();
 
@@ -165,7 +166,7 @@ namespace Proge.Teams.Edu.GraphApi
                     {
                         UserPrincipalName = user.UserPrincipalName,
                         Mail = user.Mail,
-                        AzureAdId = user.Id,   
+                        AzureAdId = user.Id,
                         Name = user.GivenName,
                         SecondName = user.Surname
                     };
@@ -449,17 +450,17 @@ namespace Proge.Teams.Edu.GraphApi
         /// <summary>
         /// Adds (pins) a tab to the specified channel within a team.
         /// </summary>
-        /// <param name="groupId">Id of the team.</param>
+        /// <param name="teamId">Id of the team.</param>
         /// <param name="chanId">Id of the channel.</param>
         /// <param name="tab">The Microsoft.Graph.TeamsTab to add.</param>
         /// <returns>The new Microsoft.Graph.TeamsTab object added to the channel.</returns>
-        public async Task<TeamsTab> CreateWebTab(string groupId, string chanId, TeamsTab tab)
+        public async Task<TeamsTab> CreateWebTab(string teamId, string chanId, TeamsTab tab, CancellationToken cancellationToken = default)
         {
-            return await Retry.Do(async () => await graphClient.Teams[$"{groupId}"]
+            return await Retry.Do(async () => await graphClient.Teams[$"{teamId}"]
                 .Channels[$"{chanId}"]
                 .Tabs
                .Request()
-               .AddAsync(tab), TimeSpan.FromSeconds(_authenticationConfig.RetryDelay));
+               .AddAsync(tab, cancellationToken), TimeSpan.FromSeconds(_authenticationConfig.RetryDelay));
         }
 
         /// <summary>
@@ -470,14 +471,14 @@ namespace Proge.Teams.Edu.GraphApi
         /// <param name="tabId">Id of the tab.</param>
         /// <param name="tab">A Microsoft.Graph.TeamsTab object with the new values for relevant fields that should be updated.</param>
         /// <returns></returns>
-        public async Task<TeamsTab> UpdateWebTab(string groupId, string chanId, string tabId, TeamsTab tab)
+        public async Task<TeamsTab> UpdateWebTab(string groupId, string chanId, string tabId, TeamsTab tab, CancellationToken cancellationToken = default)
         {
             tab.ODataBind = null;
             return await Retry.Do(async () => await graphClient.Teams[$"{groupId}"]
                 .Channels[$"{chanId}"]
                 .Tabs[$"{tabId}"]
                 .Request()
-                .UpdateAsync(tab), TimeSpan.FromSeconds(_authenticationConfig.RetryDelay));
+                .UpdateAsync(tab, cancellationToken), TimeSpan.FromSeconds(_authenticationConfig.RetryDelay));
         }
 
         /// <summary>
@@ -751,7 +752,8 @@ namespace Proge.Teams.Edu.GraphApi
             return new EducationClass
             {
                 MailNickname = educationalClassTeam.Key,
-                DisplayName = educationalClassTeam.Name,
+                //MS Graph limit on length
+                DisplayName = educationalClassTeam.Name.Length >= 120 ? educationalClassTeam.Name.Substring(0, 120) : educationalClassTeam.Name,
                 Description = educationalClassTeam.Description,
                 //ClassCode = "Health 501",
                 //ExternalName = "Health Level 1",
@@ -906,6 +908,37 @@ namespace Proge.Teams.Edu.GraphApi
             return list;
         }
 
+        public async Task<IEnumerable<ListItem>> GetListItemsWithFieldsValues(string siteId, string listId, IEnumerable<QueryOption> queryOptions = null, string filter = null)
+        {
+            List<ListItem> retList = new List<ListItem>();
+
+            IListItemsCollectionRequest lstItCollectionRequest;
+            IListItemsCollectionPage lstItCollectionPage;
+
+            var queryBuilder = graphClient.Sites[siteId].Lists[listId].Items;
+            if (queryOptions != null)
+                lstItCollectionRequest = queryBuilder.Request(queryOptions);
+            else
+                lstItCollectionRequest = queryBuilder.Request();
+
+            if (filter != null)
+                lstItCollectionRequest = lstItCollectionRequest.Filter(filter);
+
+            lstItCollectionPage = await lstItCollectionRequest.GetAsync();
+
+            retList.AddRange(lstItCollectionPage);
+            IListItemsCollectionRequest listItCollectionNextPageRequest = lstItCollectionPage.NextPageRequest;
+            while (listItCollectionNextPageRequest != null)
+            {
+                IListItemsCollectionPage lstItCollectionNextPage = await listItCollectionNextPageRequest.GetAsync();
+                listItCollectionNextPageRequest = lstItCollectionNextPage.NextPageRequest;
+                retList.AddRange(lstItCollectionNextPage);
+            }
+
+            return retList;
+        }
+
+
         /// <summary>
         /// Get a Sharepoint item.
         /// </summary>
@@ -935,6 +968,28 @@ namespace Proge.Teams.Edu.GraphApi
             var list = await graphClient.Sites[siteId].Lists[listName].Items
                 .Request()
                  .Filter(filter)
+                .GetAsync();
+            return list;
+        }
+
+        /// <summary>
+        /// Get a collection of Sharepoint listitems including each listitem's column values.
+        /// </summary>
+        /// <param name="siteId">Sharepoint site id.</param>
+        /// <param name="listName">Sharepoint list name.</param>
+        /// <param name="columnId">Id of the search field.</param>
+        /// <param name="value">Value of the search field.</param>
+        /// <returns>Collection of Sharepoint items (collection of Microsoft.Graph.ListItem).</returns>
+        public async Task<IEnumerable<ListItem>> SearchListItemDetailsByIndexedField(string siteId, string listName, string columnId, string value)
+        {
+            string filter = $"fields/{columnId} eq '{value}'";
+            var queryOptions = new List<QueryOption>()
+            {
+                new QueryOption("expand", "fields")
+            };
+            var list = await graphClient.Sites[siteId].Lists[listName].Items
+                .Request(queryOptions)
+                .Filter(filter)
                 .GetAsync();
             return list;
         }
@@ -1027,7 +1082,49 @@ namespace Proge.Teams.Edu.GraphApi
             {
                 _logger.LogWarning(ex, $"Email not sent");
             }
-            
+
+        }
+
+        public async Task<IEducationalClassTeam> MapTeamOwnerMemberPrincipalName(IEducationalClassTeam insegnamento, Dictionary<string, ITeamMember> userCache)
+        {
+            var taskOwners = new List<Task<ITeamMember>>();
+            var taskMembers = new List<Task<ITeamMember>>();
+
+            var cachedOwners = new List<ITeamMember>();
+            foreach (var owner in insegnamento.Owners.Where(a => a != null && !string.IsNullOrWhiteSpace(a.UserPrincipalName)))
+            {
+                if (userCache.ContainsKey(owner.UserPrincipalName))
+                    cachedOwners.Add(userCache.Single(m => m.Key == owner.UserPrincipalName).Value);
+                else
+                    taskOwners.Add(GetTeamMemberByPrincipalName(owner.UserPrincipalName));
+            }
+
+            var cachedMembers = new List<ITeamMember>();
+            foreach (var memb in insegnamento.Members.Where(a => a != null && !string.IsNullOrWhiteSpace(a.UserPrincipalName)))
+            {
+                if (userCache.ContainsKey(memb.UserPrincipalName))
+                    cachedMembers.Add(userCache.Single(m => m.Key == memb.UserPrincipalName).Value);
+                else
+                    taskMembers.Add(GetTeamMemberByPrincipalName(memb.UserPrincipalName));
+            }
+
+            var resultOwners = await Task.WhenAll(taskOwners);
+            foreach (var item in resultOwners.Where(a => a != null && !string.IsNullOrWhiteSpace(a.UserPrincipalName)))
+            {
+                if (!userCache.ContainsKey(item.UserPrincipalName))
+                    userCache.Add(item.UserPrincipalName, item);
+            };
+            var resultMembers = await Task.WhenAll(taskMembers);
+            foreach (var item in resultMembers.Where(a => a != null && !string.IsNullOrWhiteSpace(a.UserPrincipalName)))
+            {
+                if (!userCache.ContainsKey(item.UserPrincipalName))
+                    userCache.Add(item.UserPrincipalName, item);
+            };
+
+            insegnamento.Owners = resultOwners.Where(a => a != null).Concat(cachedOwners);
+            insegnamento.Members = resultMembers.Where(a => a != null).Concat(cachedMembers);
+
+            return insegnamento;
         }
     }
 }
