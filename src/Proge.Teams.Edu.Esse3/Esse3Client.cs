@@ -13,6 +13,7 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using Proge.Teams.Edu.Esse3.Models;
 
+
 namespace Proge.Teams.Edu.Esse3
 {
     /// <summary>
@@ -50,9 +51,25 @@ namespace Proge.Teams.Edu.Esse3
         /// <param name="adId">id dell'attività didattica di erogazione dell'appello</param>
         /// <param name="aaCalId">anno di definizione del calendario esami</param>
         /// <returns></returns>
-        Task<IEnumerable<AppelloCustom>> GetAppelli(string cdsId, string adId, string aaCalId = null);
+        Task<IEnumerable<AppelloCustom>> GetAppelli(string cdsId, string adId, string aaCalId = null, DateTime? minDate = null);
         Task<AppelloCustom> GetAppello(int cdsId, int addId, int appId);
         Task<IEnumerable<AppelloIscritto>> GetAppelloIscritti(int cdsId, int adId, int appId);
+        /// <summary>
+        /// Recupera le sessioni associate all'appello
+        /// </summary>
+        /// <param name="cdsId">id del corso di studio di erogazione dell'appello</param>
+        /// <param name="adId">id del corso di studio di erogazione dell'appello</param>
+        /// <param name="aaCalId">progressivo dell'appello all'interno della coppa CDS/AD di definizione; è parte della chiave (cds_id,ad_id,app_id)</param>
+        /// <returns></returns>
+        Task<IEnumerable<Sessione>> GetSessioniAppello(long cdsId, long adId, long appId);
+        /// <summary>
+        /// Recupera i turni associati all'appello
+        /// </summary>
+        /// <param name="cdsId">id del corso di studio di erogazione dell'appello</param>
+        /// <param name="adId">id del corso di studio di erogazione dell'appello</param>
+        /// <param name="aaCalId">progressivo dell'appello all'interno della coppa CDS/AD di definizione; è parte della chiave (cds_id,ad_id,app_id)</param>
+        /// <returns></returns>
+        Task<IEnumerable<Turno>> GetTurniAppello(long cdsId, long adId, long appId);
         Task<IEnumerable<AppelloCommissione>> GetAppelloCommissione(int cdsId, int adId, int appId);
         Task<AppelloCustom> GetAppelloIscrittiPrenotazioneStudente(int cdsId, int adId, int appId, int stuId);
         Task<IEnumerable<Docente>> GetDocente(int docenteId);
@@ -83,6 +100,7 @@ namespace Proge.Teams.Edu.Esse3
         /// <returns></returns>
         Task<IEnumerable<RigaLibretto>> GetDettaglioADStudente(Int64 matId);
         Task<Login> Login();
+        Task Logout();
     }
 
     /// <summary>
@@ -92,11 +110,13 @@ namespace Proge.Teams.Edu.Esse3
     {
         private static readonly HttpClient client = new HttpClient();
         private readonly Esse3Settings _esse3Settings;
+        private readonly IRetryManager _retryManager;
         private string jSession { get; set; }
 
-        public Esse3Client(IOptions<Esse3Settings> unimoresettings)
+        public Esse3Client(IOptions<Esse3Settings> unimoresettings, IRetryManager retryManager)
         {
             _esse3Settings = unimoresettings.Value;
+            _retryManager = retryManager;
         }
 
         public async Task<Login> Login()
@@ -120,6 +140,13 @@ namespace Proge.Teams.Edu.Esse3
             }
         }
 
+        public async Task Logout()
+        {
+            string url = $"{_esse3Settings.WsBaseUrl}/api/logout";
+            var requestMessage = RequestMessageFactory(HttpMethod.Get, url);
+            var response = await client.SendAsync(requestMessage);            
+        }
+
         #region Offerta V1
         /// <summary>
         /// Offerta didattica dei corsi di studio in un dato anno.
@@ -129,8 +156,7 @@ namespace Proge.Teams.Edu.Esse3
         public async Task<IEnumerable<Offerta>> GetOfferte(int aaOffId)
         {
             string url = $"{_esse3Settings.WsBaseUrl}/api/offerta-service-v1/offerte";
-            var requestMessage = RequestMessageFactory(HttpMethod.Get, url, $"aaOffId={aaOffId}");
-            var response = await client.SendAsync(requestMessage);
+            var response = await _retryManager.DoSendAsyncRequest<HttpResponseMessage>(client, HttpMethod.Get, url, jSession);
 
             response.EnsureSuccessStatusCode();
             string res = await response.Content.ReadAsStringAsync();
@@ -155,8 +181,7 @@ namespace Proge.Teams.Edu.Esse3
         public async Task<IEnumerable<ADContestualizzata>> GetADOfferta(int aaOffId, Int64 cdsOffId)
         {
             string url = $"{_esse3Settings.WsBaseUrl}/api/offerta-service-v1/offerte/{aaOffId}/{cdsOffId}/attivita";
-            var requestMessage = RequestMessageFactory(HttpMethod.Get, url);
-            var response = await client.SendAsync(requestMessage);
+            var response = await _retryManager.DoSendAsyncRequest<HttpResponseMessage>(client, HttpMethod.Get, url, jSession);
 
             response.EnsureSuccessStatusCode();
             string res = await response.Content.ReadAsStringAsync();
@@ -200,12 +225,11 @@ namespace Proge.Teams.Edu.Esse3
             if (aaOffAbilId.HasValue)
                 qString.Add($"aaOffAbilId={aaOffAbilId.Value}");
 
+            HttpResponseMessage response;
             if (qString.Any())
-                requestMessage = RequestMessageFactory(HttpMethod.Get, url, qString.ToArray());
+                response = await _retryManager.DoSendAsyncRequest<HttpResponseMessage>(client, HttpMethod.Get, url, jSession, qString.ToArray());
             else
-                requestMessage = RequestMessageFactory(HttpMethod.Get, url);
-
-            var response = await client.SendAsync(requestMessage);
+                response = await _retryManager.DoSendAsyncRequest<HttpResponseMessage>(client, HttpMethod.Get, url, jSession);
 
             response.EnsureSuccessStatusCode();
             string res = await response.Content.ReadAsStringAsync();
@@ -227,11 +251,13 @@ namespace Proge.Teams.Edu.Esse3
         /// <param name="adId">id dell'attività didattica di erogazione dell'appello</param>
         /// <param name="aaCalId">anno di definizione del calendario esami</param>
         /// <returns></returns>
-        public async Task<IEnumerable<AppelloCustom>> GetAppelli(string cdsId, string adId, string aaCalId = null)
+        public async Task<IEnumerable<AppelloCustom>> GetAppelli(string cdsId, string adId, string aaCalId = null, DateTime? mindate = null)
         {
             string url = $"{_esse3Settings.WsBaseUrl}/api/calesa-service-v1/appelli/{cdsId}/{adId}";
-            var requestMessage = RequestMessageFactory(HttpMethod.Get, url, $"aaCalId={aaCalId}");
-            var response = await client.SendAsync(requestMessage);
+            string queryString = $"aaCalId={aaCalId}";
+            if (mindate.HasValue)
+                queryString += $"&minDataApp={mindate.Value.ToString("dd/MM/yyyy")}";
+            var response = await _retryManager.DoSendAsyncRequest<HttpResponseMessage>(client, HttpMethod.Get, url, jSession, queryString);
 
             response.EnsureSuccessStatusCode();
             string res = await response.Content.ReadAsStringAsync();
@@ -241,8 +267,43 @@ namespace Proge.Teams.Edu.Esse3
                 return JsonSerializer.Deserialize<IEnumerable<AppelloCustom>>(res, DefaultSerializerOption);
             }
             catch (JsonException ex) // Invalid JSON
+            {                
+                throw ex;
+            }
+        }
+        
+        public async Task<IEnumerable<Sessione>> GetSessioniAppello(long cdsId, long adId, long appId)
+        {
+            string url = $"{_esse3Settings.WsBaseUrl}/api/calesa-service-v1/appelli/{cdsId}/{adId}/{appId}/sessioni";
+            var response = await _retryManager.DoSendAsyncRequest<HttpResponseMessage>(client, HttpMethod.Get, url,  jSession);
+
+            response.EnsureSuccessStatusCode();
+            string res = await response.Content.ReadAsStringAsync();
+
+            try
             {
-                //Console.WriteLine(ex.ToString());
+                return JsonSerializer.Deserialize<IEnumerable<Sessione>>(res, DefaultSerializerOption);
+            }
+            catch (JsonException ex) // Invalid JSON
+            {                
+                throw ex;
+            }
+        }
+
+        public async Task<IEnumerable<Turno>> GetTurniAppello(long cdsId, long adId, long appId)
+        {
+            string url = $"{_esse3Settings.WsBaseUrl}/api/calesa-service-v1/appelli/{cdsId}/{adId}/{appId}/turni";
+            var response = await _retryManager.DoSendAsyncRequest<HttpResponseMessage>(client, HttpMethod.Get, url,  jSession);
+
+            response.EnsureSuccessStatusCode();
+            string res = await response.Content.ReadAsStringAsync();
+
+            try
+            {
+                return JsonSerializer.Deserialize<IEnumerable<Turno>>(res, DefaultSerializerOption);
+            }
+            catch (JsonException ex) // Invalid JSON
+            {                
                 throw ex;
             }
         }
@@ -257,8 +318,7 @@ namespace Proge.Teams.Edu.Esse3
         public async Task<AppelloCustom> GetAppello(int cdsId, int addId, int appId)
         {
             string url = $"{_esse3Settings.WsBaseUrl}/api/calesa-service-v1/appelli/{cdsId}/{addId}/{appId}";
-            var requestMessage = RequestMessageFactory(HttpMethod.Get, url);
-            var response = await client.SendAsync(requestMessage);
+            var response = await _retryManager.DoSendAsyncRequest<HttpResponseMessage>(client, HttpMethod.Get, url,  jSession);
 
             response.EnsureSuccessStatusCode();
             string res = await response.Content.ReadAsStringAsync();
@@ -276,8 +336,7 @@ namespace Proge.Teams.Edu.Esse3
         public async Task<AppelloCustom> GetSessione(int aaSesId)
         {
             string url = $"{_esse3Settings.WsBaseUrl}/api/calesa-service-v1/sessioni/{aaSesId}";
-            var requestMessage = RequestMessageFactory(HttpMethod.Get, url);
-            var response = await client.SendAsync(requestMessage);
+            var response = await _retryManager.DoSendAsyncRequest<HttpResponseMessage>(client, HttpMethod.Get, url,  jSession);
 
             response.EnsureSuccessStatusCode();
             string res = await response.Content.ReadAsStringAsync();
@@ -295,8 +354,7 @@ namespace Proge.Teams.Edu.Esse3
         public async Task<IEnumerable<AppelloIscritto>> GetAppelloIscritti(int cdsId, int adId, int appId)
         {
             string url = $"{_esse3Settings.WsBaseUrl}/api/calesa-service-v1/appelli/{cdsId}/{adId}/{appId}/iscritti";
-            var requestMessage = RequestMessageFactory(HttpMethod.Get, url, "attoreCod=DOC");
-            var response = await client.SendAsync(requestMessage);
+            var response = await _retryManager.DoSendAsyncRequest<HttpResponseMessage>(client, HttpMethod.Get, url,  jSession, "attoreCod=DOC");
 
             response.EnsureSuccessStatusCode();
             string res = await response.Content.ReadAsStringAsync();
@@ -314,8 +372,7 @@ namespace Proge.Teams.Edu.Esse3
         public async Task<IEnumerable<AppelloCommissione>> GetAppelloCommissione(int cdsId, int adId, int appId)
         {
             string url = $"{_esse3Settings.WsBaseUrl}/api/calesa-service-v1/appelli/{cdsId}/{adId}/{appId}/comm";
-            var requestMessage = RequestMessageFactory(HttpMethod.Get, url);
-            var response = await client.SendAsync(requestMessage);
+            var response = await _retryManager.DoSendAsyncRequest<HttpResponseMessage>(client, HttpMethod.Get, url,  jSession);
 
             response.EnsureSuccessStatusCode();
             string res = await response.Content.ReadAsStringAsync();
@@ -333,8 +390,7 @@ namespace Proge.Teams.Edu.Esse3
         public async Task<AppelloCustom> GetAppelloIscrittiPrenotazioneStudente(int cdsId, int adId, int appId, int stuId)
         {
             string url = $"{_esse3Settings.WsBaseUrl}/api/calesa-service-v1/appelli/{cdsId}/{adId}/{appId}/iscritti/{stuId}";
-            var requestMessage = RequestMessageFactory(HttpMethod.Get, url);
-            var response = await client.SendAsync(requestMessage);
+            var response = await _retryManager.DoSendAsyncRequest<HttpResponseMessage>(client, HttpMethod.Get, url,  jSession);
 
             response.EnsureSuccessStatusCode();
             string res = await response.Content.ReadAsStringAsync();
@@ -354,8 +410,7 @@ namespace Proge.Teams.Edu.Esse3
         public async Task<IEnumerable<Docente>> GetDocente(int docenteId)
         {
             string url = $"{_esse3Settings.WsBaseUrl}/api/anagrafica-service-v2/docenti/{docenteId}";
-            var requestMessage = RequestMessageFactory(HttpMethod.Get, url);
-            var response = await client.SendAsync(requestMessage);
+            var response = await _retryManager.DoSendAsyncRequest<HttpResponseMessage>(client, HttpMethod.Get, url,  jSession);
 
             response.EnsureSuccessStatusCode();
             string res = await response.Content.ReadAsStringAsync();
@@ -373,8 +428,7 @@ namespace Proge.Teams.Edu.Esse3
         public async Task<Persona> GetPersona(string personaId)
         {
             string url = $"{_esse3Settings.WsBaseUrl}/api/anagrafica-service-v2/persone/{personaId}";
-            var requestMessage = RequestMessageFactory(HttpMethod.Get, url);
-            var response = await client.SendAsync(requestMessage);
+            var response = await _retryManager.DoSendAsyncRequest<HttpResponseMessage>(client, HttpMethod.Get, url,  jSession);
 
             response.EnsureSuccessStatusCode();
             string res = await response.Content.ReadAsStringAsync();
@@ -392,8 +446,7 @@ namespace Proge.Teams.Edu.Esse3
         public async Task<IEnumerable<Utente>> GetUtente(string personaId)
         {
             string url = $"{_esse3Settings.WsBaseUrl}/api/anagrafica-service-v2/utenti/{personaId}";
-            var requestMessage = RequestMessageFactory(HttpMethod.Get, url);
-            var response = await client.SendAsync(requestMessage);
+            var response = await _retryManager.DoSendAsyncRequest<HttpResponseMessage>(client, HttpMethod.Get, url,  jSession);
 
             response.EnsureSuccessStatusCode();
             string res = await response.Content.ReadAsStringAsync();
@@ -419,12 +472,10 @@ namespace Proge.Teams.Edu.Esse3
         /// <param name="pdsId">Id del percorso di studio.</param>
         /// <param name="adId">Id dell'attività didattica.</param>
         /// <returns></returns>
-        public async Task<IEnumerable<DettaglioLogistica>> GetDettagliLogistica(int aaOffId, Int64 cdsOffId, 
+        public async Task<IEnumerable<DettaglioLogistica>> GetDettagliLogistica(int aaOffId, Int64 cdsOffId,
             int? aaOrdId = null, Int64? pdsId = null, Int64? adId = null, string adCod = null)
         {
             string url = $"{_esse3Settings.WsBaseUrl}/api/logistica-service-v1/logisticaPerOdFull/{aaOffId}/{cdsOffId}/";
-
-            var requestMessage = new HttpRequestMessage();
 
             List<string> qString = new List<string>();
             if (aaOrdId.HasValue)
@@ -436,12 +487,11 @@ namespace Proge.Teams.Edu.Esse3
             if (!string.IsNullOrWhiteSpace(adCod))
                 qString.Add($"adCod={adCod}");
 
+            HttpResponseMessage response;
             if (qString.Any())
-                requestMessage = RequestMessageFactory(HttpMethod.Get, url, qString.ToArray());
+                response = await _retryManager.DoSendAsyncRequest<HttpResponseMessage>(client, HttpMethod.Get, url,  jSession, qString.ToArray());
             else
-                requestMessage = RequestMessageFactory(HttpMethod.Get, url);
-
-            var response = await client.SendAsync(requestMessage);
+                response = await _retryManager.DoSendAsyncRequest<HttpResponseMessage>(client, HttpMethod.Get, url,  jSession);
 
             response.EnsureSuccessStatusCode();
             string res = await response.Content.ReadAsStringAsync();
@@ -468,20 +518,17 @@ namespace Proge.Teams.Edu.Esse3
         {
             string url = $"{_esse3Settings.WsBaseUrl}/api/libretto-service-v2/libretti/";
 
-            var requestMessage = new HttpRequestMessage();
-
             List<string> qString = new List<string>();
             if (cdsStuId.HasValue)
                 qString.Add($"cdsStuId={cdsStuId.Value}");
             if (!string.IsNullOrWhiteSpace(staStuCod))
-                qString.Add($"staStuCod={staStuCod}");            
+                qString.Add($"staStuCod={staStuCod}");
 
+            HttpResponseMessage response;
             if (qString.Any())
-                requestMessage = RequestMessageFactory(HttpMethod.Get, url, qString.ToArray());
+                response = await _retryManager.DoSendAsyncRequest<HttpResponseMessage>(client, HttpMethod.Get, url,  jSession, qString.ToArray());
             else
-                requestMessage = RequestMessageFactory(HttpMethod.Get, url);
-
-            var response = await client.SendAsync(requestMessage);
+                response = await _retryManager.DoSendAsyncRequest<HttpResponseMessage>(client, HttpMethod.Get, url,  jSession);
 
             response.EnsureSuccessStatusCode();
             string res = await response.Content.ReadAsStringAsync();
@@ -505,8 +552,7 @@ namespace Proge.Teams.Edu.Esse3
         public async Task<IEnumerable<RigaLibretto>> GetDettaglioADStudente(Int64 matId)
         {
             string url = $"{_esse3Settings.WsBaseUrl}/api/libretto-service-v2/libretti/{matId}/righe";
-            var requestMessage = RequestMessageFactory(HttpMethod.Get, url);
-            var response = await client.SendAsync(requestMessage);
+            var response = await _retryManager.DoSendAsyncRequest<HttpResponseMessage>(client, HttpMethod.Get, url,  jSession);
 
             response.EnsureSuccessStatusCode();
             string res = await response.Content.ReadAsStringAsync();

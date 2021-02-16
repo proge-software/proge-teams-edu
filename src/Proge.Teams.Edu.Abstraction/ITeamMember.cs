@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
-namespace Proge.Teams.Edu.Abstraction
+﻿namespace Proge.Teams.Edu.Abstraction
 {
     public interface ITeamMember
     {
@@ -12,6 +8,4 @@ namespace Proge.Teams.Edu.Abstraction
         string Name { get; set; }
         string SecondName { get; set; }
     }
-
-    
 }

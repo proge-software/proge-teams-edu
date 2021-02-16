@@ -6,15 +6,22 @@
     <Version>1.0.4</Version>
     <Authors>Francesco Venturini</Authors>
     <Company>Proge-Software</Company>
-    <PackageDescription>Base project for Teams integration</PackageDescription>
+    <PackageDescription>Project containing for acquiring Teams dashboard data</PackageDescription>
     <RepositoryUrl>https://github.com/proge-software/proge-teams-edu</RepositoryUrl>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Microsoft.Graph" Version="3.24.0" />
+    <PackageReference Include="Microsoft.Extensions.Options" Version="3.1.11" />
     <PackageReference Include="Microsoft.Graph.Beta" Version="0.37.0-preview" />
   </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Proge.Teams.Edu.Abstraction\Proge.Teams.Edu.Abstraction.csproj" />
+    <ProjectReference Include="..\Proge.Teams.Edu.DAL\Proge.Teams.Edu.DAL.csproj" />
+    <ProjectReference Include="..\Proge.Teams.Edu.GraphApi\Proge.Teams.Edu.GraphApi.csproj" />
+  </ItemGroup>
+
   <Target Name="ChangeAliasesOfStrongNameAssemblies" BeforeTargets="FindReferenceAssembliesForReferences;ResolveReferences">
     <ItemGroup>
       <ReferencePath Condition="'%(FileName)' == 'Microsoft.Graph.Beta'">

@@ -1,0 +1,13 @@
+{
+  "profiles": {
+    "Proge.Teams.Edu.Function": {
+      "commandName": "Project"
+    },
+    "Docker (1)": {
+      "commandName": "Docker",
+      "launchUrl": "{Scheme}://{ServiceHost}:{ServicePort}",
+      "httpPort": 34910,
+      "useSSL": false
+    }
+  }
+}
