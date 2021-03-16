@@ -1,0 +1,28 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/spfx-build/config.2.0.schema.json",
+  "version": "2.0",
+  "bundles": {
+    "office-365-didattica-teams-web-part": {
+      "components": [
+        {
+          "entrypoint": "./lib/webparts/office365DidatticaTeams/Office365DidatticaTeamsWebPart.js", 
+          "manifest": "./src/webparts/office365DidatticaTeams/Office365DidatticaTeamsWebPart.manifest.json"
+        }
+      ]
+    },
+    "office-365-exams-management-web-part": {
+      "components": [
+        {
+          "entrypoint": "./lib/webparts/examsManagement/examsManagementWebPart.js", 
+          "manifest": "./src/webparts/examsManagement/examsManagementWebPart.manifest.json"
+        }
+      ]
+    }
+  },
+  "externals": {},
+  "localizedResources": {
+    "Office365DidatticaTeamsWebPartStrings": "lib/webparts/office365DidatticaTeams/loc/{locale}.js",
+    "ExamsManagementWebPartStrings": "lib/webparts/examsManagement/loc/{locale}.js"
+  }
+
+}

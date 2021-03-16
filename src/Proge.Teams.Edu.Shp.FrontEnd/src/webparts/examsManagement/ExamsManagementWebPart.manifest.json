@@ -1,0 +1,26 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/spfx/client-side-web-part-manifest.schema.json",
+  "id": "",
+  "alias": "ExamsManagementWebPart",
+  "componentType": "WebPart",
+  "version": "*",
+  "manifestVersion": 2,
+  "requiresCustomScript": false,
+  "supportedHosts": ["SharePointWebPart", "SharePointFullPage", "TeamsTab"],
+  "supportsFullBleed": true,
+  "preconfiguredEntries": [{
+    "groupId": "", 
+    "group": { "default": "Other" },
+    "title": { "default": "Exams Management" },
+    "description": { "default": "Permit Exam Management by Teacher" },
+    "officeFabricIconFontName": "Page",
+    "properties": {
+      "description": "Exam Management",
+      "clientMode" : "MSGraphClient",
+      "listSite" : "",
+      "listName" : "",
+      "listFilter" : "",
+      "adminGruopId" : ""
+    }
+  }]
+}

@@ -1,0 +1,25 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/spfx/client-side-web-part-manifest.schema.json",
+  "id": "",
+  "alias": "Office365DidatticaTeamsWebPart",
+  "componentType": "WebPart",
+  "version": "*",
+  "manifestVersion": 2,
+  "requiresCustomScript": false,
+  "supportsFullBleed": true,
+  "supportedHosts": ["SharePointWebPart", "SharePointFullPage", "TeamsTab"],
+  "preconfiguredEntries": [{
+    "groupId": "", 
+    "group": { "default": "Other" },
+    "title": { "default": "Office 365 Didattica Teams" },
+    "description": { "default": "Didattica Teams" },
+    "officeFabricIconFontName": "Page",
+    "properties": {
+      "description": "Didattica Teams",
+      "clientMode" : "MSGraphClient",
+      "listSite" : "",
+      "listName" : "",
+      "listFilter" : "IsMembershipLimitedToOwners eq false and TeamType eq 'Insegnamento'"
+    }
+  }]
+}
