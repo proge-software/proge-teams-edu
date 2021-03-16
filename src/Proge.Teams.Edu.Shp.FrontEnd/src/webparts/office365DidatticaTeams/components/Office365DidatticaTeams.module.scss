@@ -1,0 +1,209 @@
+@import '~office-ui-fabric-react/dist/sass/References.scss';
+
+.office365DidatticaTeams {
+  .container {
+    max-width: 1900px;
+    margin: 10px auto;
+    box-shadow: 0 2px 4px 0 rgba(0, 0, 0, 0.2), 0 25px 50px 0 rgba(0, 0, 0, 0.1);
+  }
+
+  .row {
+    @include ms-Grid-row;
+    @include ms-fontColor-white;
+    background-color: $ms-color-themeSecondary;
+    padding: 10px;
+  }
+
+  .column {
+    @include ms-Grid-col;
+    @include ms-lg12;
+    @include ms-xl12;
+  }
+
+  .title {
+    @include ms-font-xl;
+    @include ms-fontColor-white;
+    font-weight: $ms-font-weight-semibold;
+  }
+  
+  .subTitle {
+    @include ms-font-l;
+    @include ms-fontColor-white;
+    font-weight: $ms-font-weight-semibold;
+  }
+
+  .description {
+    @include ms-font-l;
+    @include ms-fontColor-white;
+  }
+
+
+
+  .spinnerLoad 
+  {
+    font-weight: $ms-font-weight-semibold;
+    @include ms-font-l;
+    @include ms-fontColor-white;
+    height: 32px;
+    line-height: 32px;
+    margin: 4px 4px;
+    vertical-align: top;
+  }
+
+  .group {
+    @include ms-font-m;
+    @include ms-fontColor-white;
+    margin-top:10px;
+  }
+
+  .groupHeader 
+  {
+    border-top: solid #F0F0F0 1px;
+    border-bottom: solid #F0F0F0 1px;
+    padding: 8px;
+    margin: 8px;
+    position: relative;
+    z-index: 100;
+    background:  #F0F0F0;
+    font-family: "Segoe UI WestEuropean","Segoe UI",-apple-system,BlinkMacSystemFont,Roboto,"Helvetica Neue",sans-serif;
+
+    .groupHeaderTitle
+    {
+      @include ms-font-xl;
+      @include ms-fontColor-blue;
+      font-weight: $ms-font-weight-semibold;
+      padding-bottom:5px;
+      text-decoration:  none;
+    }    
+
+    .groupHeaderCourse
+    {
+      @include ms-font-m;
+      color: #303030;
+      padding-right:12px;
+      font-weight: $ms-font-weight-semibold;
+      padding-bottom:5px;
+      text-decoration: none;
+    }    
+    .groupHeaderLink
+    {
+      @include ms-font-m;
+      @include ms-fontColor-black;
+      text-decoration:  none;
+      &:hover{color:blue};
+    }    
+  }
+
+  .groupDetail 
+  {
+    @include ms-Grid-row;
+    padding: 8px;
+    margin: 8px;
+    position: relative;
+    background: white;
+    @include ms-fontColor-black;
+    font-family: "Segoe UI WestEuropean","Segoe UI",-apple-system,BlinkMacSystemFont,Roboto,"Helvetica Neue",sans-serif;
+    
+    .DetailYear {
+      @include ms-Grid-col;
+      @include ms-xxl1;
+      @include ms-xl1;
+      @include ms-sm2;
+      @include ms-font-s;
+      @include ms-fontColor-black;
+      height:50px;
+      padding-top:12px;
+      font-weight: $ms-font-weight-semibold;
+    }
+    .DetailName {
+      @include ms-Grid-col;
+      @include ms-xxl9;
+      @include ms-xl8;
+      @include ms-sm10;
+      height:50px;
+      padding-top:10px;
+      
+      .DetailTeamName {
+        @include ms-font-m;
+        @include ms-fontColor-black;
+        font-weight: $ms-font-weight-semibold;
+      }
+      .DetailTeamNote {
+        padding-top:3px;
+        @include ms-font-s;
+        @include ms-fontColor-black;
+        font-weight: $ms-font-weight-regular;
+      }
+
+    }
+    .DetailOwners {
+      @include ms-Grid-col;
+      @include ms-sm12;
+      margin-top:5px;
+    }
+    .DetailButton {
+      @include ms-Grid-col;
+      @include ms-xxl2;
+      @include ms-xl3;
+      @include ms-sm12;
+      @include ms-font-m;
+      @include ms-fontColor-black;
+      text-align: right;
+      height:50px;
+      vertical-align: middle;
+
+      .button {
+        // Our button
+        text-decoration: none;
+    
+        // Primary Button
+        background-color: $ms-color-themeSecondary;
+        border-color: $ms-color-themePrimary;
+        color: white;
+    
+        // Basic Button
+        outline: transparent;
+        position: relative;
+        font-family: "Segoe UI WestEuropean","Segoe UI",-apple-system,BlinkMacSystemFont,Roboto,"Helvetica Neue",sans-serif;
+        -webkit-font-smoothing: antialiased;
+        font-size: $ms-font-size-s;
+        font-weight: $ms-font-weight-regular;
+        border-width: 0;
+        text-align: center;
+        cursor: pointer;
+        display: inline-block;
+        min-width: 140px;
+        max-width: 140px;
+        padding: 2px;
+    
+        .label {
+          font-weight: $ms-font-weight-semibold;
+          font-size: $ms-font-size-s;
+          line-height: 20px;
+          margin: 0 2px;
+          vertical-align: top;
+          display: inline-block;
+        }
+      }
+    
+      .iscrittolabel {
+        font-weight: $ms-font-weight-semibold;
+        font-size: $ms-font-size-xs;
+        color: darkgreen; 
+        vertical-align: top;
+        padding-right:10px;
+      }
+      .noniscrittolabel {
+        font-weight: $ms-font-weight-semibold;
+        font-size: $ms-font-size-xs;
+        color: darkgray;
+        vertical-align: top;
+        padding-right:10px;
+      }
+    }    
+  }
+
+
+
+}
+
