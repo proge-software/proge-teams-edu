@@ -46,7 +46,7 @@ namespace Proge.Teams.Edu.Esse3
                         await Task.Delay(TimeSpan.FromMilliseconds(300));
 
                     var requestMessage = RequestMessageFactory(method, _esse3Settings, jSession, url, queryString);
-                    _logger.LogInformation($"Esse3 Client Request: {requestMessage.RequestUri}");
+                    _logger.LogDebug($"Esse3 Client Request: {requestMessage.RequestUri}");
                     res = await client.SendAsync(requestMessage);
                     res.EnsureSuccessStatusCode();
                     return res;
@@ -57,7 +57,7 @@ namespace Proge.Teams.Edu.Esse3
                         ? string.Join(";", res.Content.Headers.Select(a => $"Key:{a.Key}-Value:{string.Join(",",a.Value)}")) 
                         : string.Empty;
                     _logger.LogError(ex, $"Esse3 Client Request: Retry {attempted} of {_esse3Settings.MaxAttemptCount}. Status Code: {(res != null ? res.StatusCode.ToString() :"null response" ) }. Response header: {r}");
-                    if (res.StatusCode == (System.Net.HttpStatusCode)429)
+                    if (res != null && res.StatusCode == (System.Net.HttpStatusCode)429)
                         exceptions.Add(ex);
                     else
                         throw ex;

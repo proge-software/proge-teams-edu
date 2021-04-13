@@ -11,6 +11,7 @@ using Proge.Teams.Edu.DAL.Repositories;
 using Proge.Teams.Edu.GraphApi;
 using Proge.Teams.Edu.TeamsDashaborad;
 using Proge.Teams.Edu.TeamsDashboard;
+using Proge.Teams.Edu.Web;
 using Serilog;
 using Serilog.Extensions.Logging;
 using System.IO;
@@ -26,8 +27,8 @@ namespace Proge.Teams.Edu.Function
             var configuration = new ConfigurationBuilder()
                    .SetBasePath(Directory.GetCurrentDirectory())
                    .AddJsonFile("appsettings.json", true, true)
-                   .AddJsonFile("appsettings.local.json", optional: true, reloadOnChange: true) //load local settings
-                 //.AddJsonFile("appsettings.release.json", optional: true, reloadOnChange: true) //load local settings
+                   //.AddJsonFile("appsettings.local.json", optional: true, reloadOnChange: true) //load local settings
+                   .AddJsonFile("appsettings.release.json", optional: true, reloadOnChange: true) //load local settings
                    .AddEnvironmentVariables()
                    .Build();
 
@@ -40,12 +41,12 @@ namespace Proge.Teams.Edu.Function
             services.AddScoped<IGraphApiManager, GraphApiManager>();
             services.AddScoped<IBetaGraphApiManager, BetaGraphApiManager>();
             services.AddScoped<ITeamsDataCollectorManager, TeamsDataCollectorManager>();
-            //Replace previous istruction with the desired Custom Teams Data Collector Manager that suits your need
-            //services.AddScoped<ITeamsDataCollectorManager, CustomTeamsDataCollectorManager>();
+            services.AddScoped<IAzureADJwtBearerValidation, AzureADJwtBearerValidation>();
+            services.AddScoped<ITeamsDashboardFunctionsService, TeamsDashboardFunctionsService>();
             services.AddScoped<ICallRecordRepository, CallRecordRepository>();
             services.Configure<AuthenticationConfig>(configuration.GetSection("ApplicationAuthentication"));
             services.Configure<UniSettings>(configuration.GetSection("UniSettings"));
-            services.AddScoped<AzureADJwtBearerValidation>();
+            services.Configure<CallFilters>(configuration.GetSection("CallFilters"));
 
             builder.Services.AddSingleton<ILoggerProvider>(sp =>
             {

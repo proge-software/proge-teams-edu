@@ -16,28 +16,15 @@ namespace Proge.Teams.Edu.ItalianUniversity
             _logger = logger;
         }
 
-        public async Task<IEnumerable<IEducationalClassTeam>> Read()
+        public Task<IEnumerable<IEducationalClassTeam>> Read()
         {
-            throw new NotImplementedException();
+            return Task.FromException<IEnumerable<IEducationalClassTeam>>(new NotImplementedException("Read() method not implemented yet"));            
         }
 
-        public async Task Write(IEnumerable<IEducationalClassTeam> insegnamenti)
+        public Task Write(IEnumerable<IEducationalClassTeam> insegnamenti)
         {
             _logger.LogInformation("LessonsTeamsCreationJob.Write() started at {dateTime}", DateTime.Now);
-
-            throw new NotImplementedException();
-
-            _logger.LogInformation("LessonsTeamsCreationJob.Write() ended at {dateTime}", DateTime.Now);
-        }
-
-        public Task Validate(IEnumerable<IEducationalClassTeam> insegnamenti)
-        {
-            throw new NotImplementedException();
-        }
-
-        public Task GetFeedback()
-        {
-            throw new NotImplementedException();
-        }
+            return Task.FromException<IEnumerable<IEducationalClassTeam>>(new NotImplementedException("Write() method not implemented yet"));            
+        }      
     }
 }

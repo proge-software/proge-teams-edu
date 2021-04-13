@@ -1,4 +1,5 @@
 ﻿extern alias BetaLib;
+using Beta = BetaLib.Microsoft.Graph;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Microsoft.Graph.Auth;
@@ -7,7 +8,8 @@ using Proge.Teams.Edu.Abstraction;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
-using Beta = BetaLib.Microsoft.Graph;
+using Microsoft.Graph;
+using System.Net.Http.Headers;
 
 namespace Proge.Teams.Edu.GraphApi
 {
@@ -16,9 +18,7 @@ namespace Proge.Teams.Edu.GraphApi
         private readonly ILogger<BetaGraphApiManager> _logger;
         private readonly AuthenticationConfig _authenticationConfig;
         private IConfidentialClientApplication app { get; set; }
-        private ClientCredentialProvider authProvider { get; set; }
         private Beta.GraphServiceClient graphClient { get; set; }
-        private AuthenticationResult authenticationResult;
 
         public BetaGraphApiManager(IOptions<AuthenticationConfig> authCfg, ILogger<BetaGraphApiManager> logger)
         {
@@ -28,31 +28,19 @@ namespace Proge.Teams.Edu.GraphApi
                   .WithAuthority(AzureCloudInstance.AzurePublic, _authenticationConfig.TenantId)
                   .WithClientSecret(_authenticationConfig.ClientSecret)
                   .Build();
-            authProvider = new ClientCredentialProvider(app);
-            graphClient = new Beta.GraphServiceClient(authProvider);
-        }
-
-        /// <summary>
-        /// Establish the connection.
-        /// </summary>
-        /// <returns></returns>
-        public async Task ConnectAsApplication()
-        {
-            try
+            graphClient = new Beta.GraphServiceClient(new DelegateAuthenticationProvider(async (requestMessage) =>
             {
-                // Login Azure AD
-                authenticationResult = await app.AcquireTokenForClient(_authenticationConfig.ScopeList)
+                _logger.LogTrace("Requesting new access token to Microsoft Graph API");
+                var authResult = await app
+                    .AcquireTokenForClient(new string[1] { "https://graph.microsoft.com/.default" })
                     .ExecuteAsync();
-            }
-            catch (MsalServiceException ex)
-            {
-                // Case when ex.Message contains:
-                // AADSTS70011 Invalid scope. The scope has to be of the form "https://resourceUrl/.default"
-                // Mitigation: change the scope to be as expected
-                throw ex;
-            }
-        }
 
+                _logger.LogTrace("Add access token to request message");
+                requestMessage
+                    .Headers
+                    .Authorization = new AuthenticationHeaderValue("Bearer", authResult.AccessToken);
+            }));
+        }
         public async Task<Beta.Subscription> AddSubscription(string changeType, string resource, DateTimeOffset? expirationOffset, string clientStateSecret,
              string notificationUrl)
         {
@@ -151,7 +139,7 @@ namespace Proge.Teams.Edu.GraphApi
             //}
         }
 
-        public async Task<Beta.CallRecords.CallRecord> GetCallRecord(string callId) 
+        public async Task<Beta.CallRecords.CallRecord> GetCallRecord(string callId)
         {
             try
             {

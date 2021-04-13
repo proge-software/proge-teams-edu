@@ -30,7 +30,6 @@ namespace Proge.Teams.Edu.GraphApi
     public class TeamsManager : ITeamsManager
     {
         #region Variables and properties       
-        private AuthenticationResult ccAuthenticationResult;
         private IPublicClientApplication unpApp { get; set; }
         private UsernamePasswordProvider authProvider { get; set; }
 
@@ -153,7 +152,7 @@ namespace Proge.Teams.Edu.GraphApi
                     // It creation attempt fails: not active team.
                     catch (Exception ex2)
                     {
-                        _logger.LogWarning(ex1, $"GetJoinCode: Post failed for team InternalId {internalTeamId}, probably team hasn't been activated");
+                        _logger.LogWarning(ex2, $"GetJoinCode: Post failed for team InternalId {internalTeamId}, probably team hasn't been activated");
                         return null;
                     }
                 }

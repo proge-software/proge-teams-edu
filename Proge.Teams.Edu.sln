@@ -17,10 +17,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "xsd", "xsd", "{F5661D39-ECB2-4EC2-AEAE-400ECBD31DA7}"
 	ProjectSection(SolutionItems) = preProject
-		xsd\DettaglioInsegnamento.xml = xsd\DettaglioInsegnamento.xml
-		xsd\Esse3Student.xml = xsd\Esse3Student.xml
 		xsd\HowToGenerateCsFromXml.bat = xsd\HowToGenerateCsFromXml.bat
-		xsd\unimore.xml = xsd\unimore.xml
 		xsd\xsd.exe = xsd\xsd.exe
 	EndProjectSection
 EndProject
@@ -45,6 +42,8 @@ EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Proge.Teams.Edu.TeamsDashboard", "src\Proge.Teams.Edu.TeamsDashboard\Proge.Teams.Edu.TeamsDashboard.csproj", "{DF7F3271-1A39-4944-BF1A-9945480C64E0}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Proge.Teams.Edu.Function", "test\Proge.Teams.Edu.Function\Proge.Teams.Edu.Function.csproj", "{63A3C3ED-FD84-4DE6-86A0-5F60629F3422}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Proge.Teams.Edu.Web", "src\Proge.Teams.Edu.Web\Proge.Teams.Edu.Web.csproj", "{C764690B-53E5-43E3-8962-A0349706B2D5}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -88,6 +87,10 @@ Global
 		{63A3C3ED-FD84-4DE6-86A0-5F60629F3422}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{63A3C3ED-FD84-4DE6-86A0-5F60629F3422}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{63A3C3ED-FD84-4DE6-86A0-5F60629F3422}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C764690B-53E5-43E3-8962-A0349706B2D5}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C764690B-53E5-43E3-8962-A0349706B2D5}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C764690B-53E5-43E3-8962-A0349706B2D5}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C764690B-53E5-43E3-8962-A0349706B2D5}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -103,6 +106,7 @@ Global
 		{71865E8F-2A80-4137-993F-7286B95DCBD4} = {10E64AE5-4523-4A4C-BE3C-8B3D898E0EFA}
 		{DF7F3271-1A39-4944-BF1A-9945480C64E0} = {BFC5B2CD-8C92-48E3-A7E7-0D949F9CF713}
 		{63A3C3ED-FD84-4DE6-86A0-5F60629F3422} = {10E64AE5-4523-4A4C-BE3C-8B3D898E0EFA}
+		{C764690B-53E5-43E3-8962-A0349706B2D5} = {BFC5B2CD-8C92-48E3-A7E7-0D949F9CF713}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {9285CA4B-7F0D-4AC0-B96B-03DC7FCED6E2}
