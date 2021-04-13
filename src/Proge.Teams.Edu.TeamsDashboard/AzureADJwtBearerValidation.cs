@@ -15,7 +15,13 @@ using System.Threading.Tasks;
 
 namespace Proge.Teams.Edu.TeamsDashboard
 {
-    public class AzureADJwtBearerValidation
+    public interface IAzureADJwtBearerValidation
+    {
+        string GetPreferredUserName();
+        Task<ClaimsPrincipal> ValidateTokenAsync(string authorizationHeader);
+    }
+
+    public class AzureADJwtBearerValidation : IAzureADJwtBearerValidation
     {
         private readonly AuthenticationConfig _authenticationConfig;
         private readonly UniSettings uniSettings;

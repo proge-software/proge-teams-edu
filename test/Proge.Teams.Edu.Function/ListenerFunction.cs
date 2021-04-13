@@ -4,6 +4,7 @@ using Microsoft.Azure.WebJobs;
 using Microsoft.Azure.WebJobs.Extensions.Http;
 using Microsoft.Extensions.Logging;
 using Proge.Teams.Edu.TeamsDashaborad;
+using Proge.Teams.Edu.Web;
 using System;
 using System.Net;
 using System.Threading.Tasks;
@@ -13,9 +14,9 @@ namespace Proge.Teams.Edu.Function
     public class ListenerFunction
     {
 
-        private readonly ITeamsDataCollectorManager teamsDataCollectorManager;
+        private readonly ITeamsDashboardFunctionsService teamsDataCollectorManager;
 
-        public ListenerFunction(ITeamsDataCollectorManager teamsDataCollector)
+        public ListenerFunction(ITeamsDashboardFunctionsService teamsDataCollector)
         {
             teamsDataCollectorManager = teamsDataCollector;
         }
@@ -24,26 +25,7 @@ namespace Proge.Teams.Edu.Function
         [FunctionName("ListenerFunction")]
         public async Task<IActionResult> Run([HttpTrigger(AuthorizationLevel.Anonymous, "get", "post", Route = null)] HttpRequest req, ILogger log)
         {
-            string validationToken = req.Query["validationToken"];
-            if (!string.IsNullOrEmpty(validationToken))
-            {
-                // Validate the new subscription by sending the token back to Microsoft Graph.
-                // This response is required for each subscription.
-                log.LogDebug("Validation token found: {0}", validationToken);
-                return new OkObjectResult(WebUtility.HtmlEncode(validationToken));
-            }
-
-            try
-            {
-                await teamsDataCollectorManager.ProcessNotification(req.Body);
-            }
-            catch (Exception ex)
-            {
-                log.LogError($"ParsingNotification: { ex.Message }");
-            }
-
-            // Still return a 202 so the service doesn't resend the notification.
-            return new AcceptedResult();
+            return await teamsDataCollectorManager.RunListenerFunction(nameof(ListenerFunction), req);
         }
     }
 }

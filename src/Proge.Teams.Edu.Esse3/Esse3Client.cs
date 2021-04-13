@@ -1,16 +1,12 @@
 ﻿using Microsoft.Extensions.Options;
 using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Text;
 using System.Threading.Tasks;
-using System.Xml;
-using System.Xml.Serialization;
 using System.Text.Json;
-using System.Text.Json.Serialization;
 using Proge.Teams.Edu.Esse3.Models;
 
 
@@ -73,6 +69,7 @@ namespace Proge.Teams.Edu.Esse3
         Task<IEnumerable<AppelloCommissione>> GetAppelloCommissione(int cdsId, int adId, int appId);
         Task<AppelloCustom> GetAppelloIscrittiPrenotazioneStudente(int cdsId, int adId, int appId, int stuId);
         Task<IEnumerable<Docente>> GetDocente(int docenteId);
+        Task<IEnumerable<Persona>> GetPersone(string codiceFiscale = null, string cognome = null, string nome = null);
         Task<Persona> GetPersona(string personaId);
         Task<AppelloCustom> GetSessione(int aaSesId);
         Task<IEnumerable<Utente>> GetUtente(string personaId);
@@ -99,6 +96,7 @@ namespace Proge.Teams.Edu.Esse3
         /// <param name="matId">Id del tratto di carriera per cui recuperare il libretto.</param>
         /// <returns></returns>
         Task<IEnumerable<RigaLibretto>> GetDettaglioADStudente(Int64 matId);
+        Task<IEnumerable<Logistica>> GetAllLogistiche(int? aaOffId, uint limit = 100);
         Task<Login> Login();
         Task Logout();
     }
@@ -144,7 +142,7 @@ namespace Proge.Teams.Edu.Esse3
         {
             string url = $"{_esse3Settings.WsBaseUrl}/api/logout";
             var requestMessage = RequestMessageFactory(HttpMethod.Get, url);
-            var response = await client.SendAsync(requestMessage);            
+            var response = await client.SendAsync(requestMessage);
         }
 
         #region Offerta V1
@@ -267,15 +265,15 @@ namespace Proge.Teams.Edu.Esse3
                 return JsonSerializer.Deserialize<IEnumerable<AppelloCustom>>(res, DefaultSerializerOption);
             }
             catch (JsonException ex) // Invalid JSON
-            {                
+            {
                 throw ex;
             }
         }
-        
+
         public async Task<IEnumerable<Sessione>> GetSessioniAppello(long cdsId, long adId, long appId)
         {
             string url = $"{_esse3Settings.WsBaseUrl}/api/calesa-service-v1/appelli/{cdsId}/{adId}/{appId}/sessioni";
-            var response = await _retryManager.DoSendAsyncRequest<HttpResponseMessage>(client, HttpMethod.Get, url,  jSession);
+            var response = await _retryManager.DoSendAsyncRequest<HttpResponseMessage>(client, HttpMethod.Get, url, jSession);
 
             response.EnsureSuccessStatusCode();
             string res = await response.Content.ReadAsStringAsync();
@@ -285,7 +283,7 @@ namespace Proge.Teams.Edu.Esse3
                 return JsonSerializer.Deserialize<IEnumerable<Sessione>>(res, DefaultSerializerOption);
             }
             catch (JsonException ex) // Invalid JSON
-            {                
+            {
                 throw ex;
             }
         }
@@ -293,7 +291,7 @@ namespace Proge.Teams.Edu.Esse3
         public async Task<IEnumerable<Turno>> GetTurniAppello(long cdsId, long adId, long appId)
         {
             string url = $"{_esse3Settings.WsBaseUrl}/api/calesa-service-v1/appelli/{cdsId}/{adId}/{appId}/turni";
-            var response = await _retryManager.DoSendAsyncRequest<HttpResponseMessage>(client, HttpMethod.Get, url,  jSession);
+            var response = await _retryManager.DoSendAsyncRequest<HttpResponseMessage>(client, HttpMethod.Get, url, jSession);
 
             response.EnsureSuccessStatusCode();
             string res = await response.Content.ReadAsStringAsync();
@@ -303,7 +301,7 @@ namespace Proge.Teams.Edu.Esse3
                 return JsonSerializer.Deserialize<IEnumerable<Turno>>(res, DefaultSerializerOption);
             }
             catch (JsonException ex) // Invalid JSON
-            {                
+            {
                 throw ex;
             }
         }
@@ -318,7 +316,7 @@ namespace Proge.Teams.Edu.Esse3
         public async Task<AppelloCustom> GetAppello(int cdsId, int addId, int appId)
         {
             string url = $"{_esse3Settings.WsBaseUrl}/api/calesa-service-v1/appelli/{cdsId}/{addId}/{appId}";
-            var response = await _retryManager.DoSendAsyncRequest<HttpResponseMessage>(client, HttpMethod.Get, url,  jSession);
+            var response = await _retryManager.DoSendAsyncRequest<HttpResponseMessage>(client, HttpMethod.Get, url, jSession);
 
             response.EnsureSuccessStatusCode();
             string res = await response.Content.ReadAsStringAsync();
@@ -336,7 +334,7 @@ namespace Proge.Teams.Edu.Esse3
         public async Task<AppelloCustom> GetSessione(int aaSesId)
         {
             string url = $"{_esse3Settings.WsBaseUrl}/api/calesa-service-v1/sessioni/{aaSesId}";
-            var response = await _retryManager.DoSendAsyncRequest<HttpResponseMessage>(client, HttpMethod.Get, url,  jSession);
+            var response = await _retryManager.DoSendAsyncRequest<HttpResponseMessage>(client, HttpMethod.Get, url, jSession);
 
             response.EnsureSuccessStatusCode();
             string res = await response.Content.ReadAsStringAsync();
@@ -354,7 +352,7 @@ namespace Proge.Teams.Edu.Esse3
         public async Task<IEnumerable<AppelloIscritto>> GetAppelloIscritti(int cdsId, int adId, int appId)
         {
             string url = $"{_esse3Settings.WsBaseUrl}/api/calesa-service-v1/appelli/{cdsId}/{adId}/{appId}/iscritti";
-            var response = await _retryManager.DoSendAsyncRequest<HttpResponseMessage>(client, HttpMethod.Get, url,  jSession, "attoreCod=DOC");
+            var response = await _retryManager.DoSendAsyncRequest<HttpResponseMessage>(client, HttpMethod.Get, url, jSession, "attoreCod=DOC");
 
             response.EnsureSuccessStatusCode();
             string res = await response.Content.ReadAsStringAsync();
@@ -372,7 +370,7 @@ namespace Proge.Teams.Edu.Esse3
         public async Task<IEnumerable<AppelloCommissione>> GetAppelloCommissione(int cdsId, int adId, int appId)
         {
             string url = $"{_esse3Settings.WsBaseUrl}/api/calesa-service-v1/appelli/{cdsId}/{adId}/{appId}/comm";
-            var response = await _retryManager.DoSendAsyncRequest<HttpResponseMessage>(client, HttpMethod.Get, url,  jSession);
+            var response = await _retryManager.DoSendAsyncRequest<HttpResponseMessage>(client, HttpMethod.Get, url, jSession);
 
             response.EnsureSuccessStatusCode();
             string res = await response.Content.ReadAsStringAsync();
@@ -390,7 +388,7 @@ namespace Proge.Teams.Edu.Esse3
         public async Task<AppelloCustom> GetAppelloIscrittiPrenotazioneStudente(int cdsId, int adId, int appId, int stuId)
         {
             string url = $"{_esse3Settings.WsBaseUrl}/api/calesa-service-v1/appelli/{cdsId}/{adId}/{appId}/iscritti/{stuId}";
-            var response = await _retryManager.DoSendAsyncRequest<HttpResponseMessage>(client, HttpMethod.Get, url,  jSession);
+            var response = await _retryManager.DoSendAsyncRequest<HttpResponseMessage>(client, HttpMethod.Get, url, jSession);
 
             response.EnsureSuccessStatusCode();
             string res = await response.Content.ReadAsStringAsync();
@@ -410,7 +408,7 @@ namespace Proge.Teams.Edu.Esse3
         public async Task<IEnumerable<Docente>> GetDocente(int docenteId)
         {
             string url = $"{_esse3Settings.WsBaseUrl}/api/anagrafica-service-v2/docenti/{docenteId}";
-            var response = await _retryManager.DoSendAsyncRequest<HttpResponseMessage>(client, HttpMethod.Get, url,  jSession);
+            var response = await _retryManager.DoSendAsyncRequest<HttpResponseMessage>(client, HttpMethod.Get, url, jSession);
 
             response.EnsureSuccessStatusCode();
             string res = await response.Content.ReadAsStringAsync();
@@ -428,7 +426,7 @@ namespace Proge.Teams.Edu.Esse3
         public async Task<Persona> GetPersona(string personaId)
         {
             string url = $"{_esse3Settings.WsBaseUrl}/api/anagrafica-service-v2/persone/{personaId}";
-            var response = await _retryManager.DoSendAsyncRequest<HttpResponseMessage>(client, HttpMethod.Get, url,  jSession);
+            var response = await _retryManager.DoSendAsyncRequest<HttpResponseMessage>(client, HttpMethod.Get, url, jSession);
 
             response.EnsureSuccessStatusCode();
             string res = await response.Content.ReadAsStringAsync();
@@ -443,10 +441,43 @@ namespace Proge.Teams.Edu.Esse3
             }
         }
 
+        public async Task<IEnumerable<Persona>> GetPersone(string codiceFiscale = null, string cognome = null, string nome = null)
+        {
+            string url = $"{_esse3Settings.WsBaseUrl}/api/anagrafica-service-v2/persone";
+
+            var requestMessage = new HttpRequestMessage();
+
+            List<string> qString = new List<string>();
+            if (!string.IsNullOrWhiteSpace(cognome))
+                qString.Add($"cognome={cognome}");
+            if (!string.IsNullOrWhiteSpace(nome))
+                qString.Add($"nome={nome}");
+            if (!string.IsNullOrWhiteSpace(codiceFiscale))
+                qString.Add($"codFis={codiceFiscale}");
+
+            HttpResponseMessage response;
+            if (qString.Any())
+                response = await _retryManager.DoSendAsyncRequest<HttpResponseMessage>(client, HttpMethod.Get, url, jSession, qString.ToArray());
+            else
+                response = await _retryManager.DoSendAsyncRequest<HttpResponseMessage>(client, HttpMethod.Get, url, jSession);
+
+            response.EnsureSuccessStatusCode();
+            string res = await response.Content.ReadAsStringAsync();
+            try
+            {
+                return JsonSerializer.Deserialize<IEnumerable<Persona>>(res, DefaultSerializerOption);
+            }
+            catch (JsonException ex) // Invalid JSON
+            {
+                //Console.WriteLine(ex.ToString());
+                throw ex;
+            }
+        }
+
         public async Task<IEnumerable<Utente>> GetUtente(string personaId)
         {
             string url = $"{_esse3Settings.WsBaseUrl}/api/anagrafica-service-v2/utenti/{personaId}";
-            var response = await _retryManager.DoSendAsyncRequest<HttpResponseMessage>(client, HttpMethod.Get, url,  jSession);
+            var response = await _retryManager.DoSendAsyncRequest<HttpResponseMessage>(client, HttpMethod.Get, url, jSession);
 
             response.EnsureSuccessStatusCode();
             string res = await response.Content.ReadAsStringAsync();
@@ -489,9 +520,9 @@ namespace Proge.Teams.Edu.Esse3
 
             HttpResponseMessage response;
             if (qString.Any())
-                response = await _retryManager.DoSendAsyncRequest<HttpResponseMessage>(client, HttpMethod.Get, url,  jSession, qString.ToArray());
+                response = await _retryManager.DoSendAsyncRequest<HttpResponseMessage>(client, HttpMethod.Get, url, jSession, qString.ToArray());
             else
-                response = await _retryManager.DoSendAsyncRequest<HttpResponseMessage>(client, HttpMethod.Get, url,  jSession);
+                response = await _retryManager.DoSendAsyncRequest<HttpResponseMessage>(client, HttpMethod.Get, url, jSession);
 
             response.EnsureSuccessStatusCode();
             string res = await response.Content.ReadAsStringAsync();
@@ -503,6 +534,53 @@ namespace Proge.Teams.Edu.Esse3
             {
                 //Console.WriteLine(ex.ToString());
                 throw ex;
+            }
+        }
+
+        public async Task<IEnumerable<Logistica>> GetAllLogistiche(int? aaOffId, uint limit = 100)
+        {
+            if (limit == 0)
+                throw new ArgumentException("'limit' must be a positive integer");
+
+            List<IEnumerable<Logistica>> ll = new List<IEnumerable<Logistica>>();
+            IEnumerable<Logistica> l = Enumerable.Empty<Logistica>();
+            uint cursor = 0;
+            do
+            {
+                l = await GetLogistica(aaOffId, cursor, limit);
+                ll.Add(l);
+                cursor += limit;
+            } while (l.Count() == limit);
+
+            IEnumerable<Logistica> logistiche = ll.SelectMany(x => x);
+            return logistiche;
+        }
+
+        private async Task<IEnumerable<Logistica>> GetLogistica(int? aaOffId = null, uint start = 0, uint limit = 100
+            //Int64? cdsOffId= null,int? aaOrdId = null, Int64? pdsId = null, Int64? adId = null, string adCod = null
+            )
+        {
+            string url = $"{_esse3Settings.WsBaseUrl}/api/logistica-service-v1/logistica";
+
+            List<string> qString = new List<string> { $"start={start}", $"limit={limit}" };
+            if (aaOffId.HasValue)
+                qString.Add($"aaOffId={aaOffId.Value}");
+
+            HttpResponseMessage response;
+            if (qString.Any())
+                response = await _retryManager.DoSendAsyncRequest<HttpResponseMessage>(client, HttpMethod.Get, url, jSession, qString.ToArray());
+            else
+                response = await _retryManager.DoSendAsyncRequest<HttpResponseMessage>(client, HttpMethod.Get, url, jSession);
+
+            response.EnsureSuccessStatusCode();
+            string res = await response.Content.ReadAsStringAsync();
+            try
+            {
+                return JsonSerializer.Deserialize<IEnumerable<Logistica>>(res, DefaultSerializerOption);
+            }
+            catch (Exception e)
+            {
+                throw;
             }
         }
         #endregion
@@ -526,9 +604,9 @@ namespace Proge.Teams.Edu.Esse3
 
             HttpResponseMessage response;
             if (qString.Any())
-                response = await _retryManager.DoSendAsyncRequest<HttpResponseMessage>(client, HttpMethod.Get, url,  jSession, qString.ToArray());
+                response = await _retryManager.DoSendAsyncRequest<HttpResponseMessage>(client, HttpMethod.Get, url, jSession, qString.ToArray());
             else
-                response = await _retryManager.DoSendAsyncRequest<HttpResponseMessage>(client, HttpMethod.Get, url,  jSession);
+                response = await _retryManager.DoSendAsyncRequest<HttpResponseMessage>(client, HttpMethod.Get, url, jSession);
 
             response.EnsureSuccessStatusCode();
             string res = await response.Content.ReadAsStringAsync();
@@ -552,7 +630,7 @@ namespace Proge.Teams.Edu.Esse3
         public async Task<IEnumerable<RigaLibretto>> GetDettaglioADStudente(Int64 matId)
         {
             string url = $"{_esse3Settings.WsBaseUrl}/api/libretto-service-v2/libretti/{matId}/righe";
-            var response = await _retryManager.DoSendAsyncRequest<HttpResponseMessage>(client, HttpMethod.Get, url,  jSession);
+            var response = await _retryManager.DoSendAsyncRequest<HttpResponseMessage>(client, HttpMethod.Get, url, jSession);
 
             response.EnsureSuccessStatusCode();
             string res = await response.Content.ReadAsStringAsync();

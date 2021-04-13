@@ -1,7 +1,6 @@
 ﻿using Microsoft.Graph;
 using System;
 using System.Collections.Generic;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -13,7 +12,6 @@ namespace Proge.Teams.Edu.Abstraction
         Task AddGroupOwner(string groupid, string id, IEnumerable<DirectoryObject> ownersInGroup = null);
         Task<ListItem> AddListItem(string siteId, string listName, ListItem item);
         Task ArchiveTeam(string id);
-        Task ConnectAsApplication();
         Task<Channel> CreateChannel(string groupId, Channel channel);
         Task<EducationClass> CreateEducationClass(EducationClass group);
         Task<Group> CreateGroup(Group group);
@@ -31,6 +29,7 @@ namespace Proge.Teams.Edu.Abstraction
         Task<EducationClass> GetEducationClass(string id);
         Task<IEnumerable<EducationClass>> GetEducationClasses();
         Task<EducationClass> GetEducationClassWGroupWTeam(string id);
+        Task<EducationClass> GetEducationClassByMailNickname(string mailNickname);
         Task<Group> GetGroup(string id);
         Task<IEnumerable<ListItem>> GetListItems(string siteId, string listName);
         Task<IEnumerable<ListItem>> GetListItemsWithFieldsValues(string siteId, string listId, IEnumerable<QueryOption> queryOptions = null, string filter = null);

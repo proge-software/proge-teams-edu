@@ -52,7 +52,7 @@ namespace Proge.Teams.Edu.GraphApi
                     if (attempted > 1)                    
                         await Task.Delay(retryInterval);                    
                     else
-                        await Task.Delay(TimeSpan.FromMilliseconds(300));
+                        await Task.Delay(TimeSpan.FromMilliseconds(500));
                     await action();
                     break;
                 }

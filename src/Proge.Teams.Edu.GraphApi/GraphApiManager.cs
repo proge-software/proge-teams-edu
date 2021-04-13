@@ -11,8 +11,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
 using System.Net.Http.Headers;
-using System.Security.Authentication;
-using System.Text;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
@@ -25,12 +23,10 @@ namespace Proge.Teams.Edu.GraphApi
     {
         private readonly AuthenticationConfig _authenticationConfig;
         private IConfidentialClientApplication app { get; set; }
-        private ClientCredentialProvider authProvider { get; set; }
         private GraphServiceClient graphClient { get; set; }
-        private AuthenticationResult authenticationResult { get; set; }
-        private string _httpToken { get; set; }
         private readonly ILogger<GraphApiManager> _logger;
         private static readonly HttpClient httpClient = new HttpClient();
+        private string _bearerToken { get; set; }
 
         private static JsonSerializerOptions DefaultSerializerOption = new JsonSerializerOptions
         {
@@ -43,66 +39,26 @@ namespace Proge.Teams.Edu.GraphApi
         {
             _logger = logger;
             _authenticationConfig = authCfg.Value;
-            app = ConfidentialClientApplicationBuilder.Create(_authenticationConfig.ClientId)
-                  .WithAuthority(AzureCloudInstance.AzurePublic, _authenticationConfig.TenantId)
-                  .WithClientSecret(_authenticationConfig.ClientSecret)
-                  .Build();
-            authProvider = new ClientCredentialProvider(app);
-            graphClient = new GraphServiceClient(authProvider);
-        }
+            app = ConfidentialClientApplicationBuilder
+                .Create(_authenticationConfig.ClientId)
+                .WithAuthority(AzureCloudInstance.AzurePublic, _authenticationConfig.TenantId)
+                .WithClientSecret(_authenticationConfig.ClientSecret)
+                .Build();
 
-        /// <summary>
-        /// Establish the connection.
-        /// </summary>
-        /// <returns></returns>
-        public async Task ConnectAsApplication()
-        {
-            try
+            graphClient = new GraphServiceClient(new DelegateAuthenticationProvider(async (requestMessage) =>
             {
-                // Login Azure AD
-                authenticationResult = await app.AcquireTokenForClient(_authenticationConfig.ScopeList)
+                _logger.LogTrace("Requesting new access token to Microsoft Graph API");
+                var authResult = await app
+                    .AcquireTokenForClient(new string[1] { "https://graph.microsoft.com/.default" })
                     .ExecuteAsync();
 
-                // Setting client default request headers
-                _httpToken = authenticationResult.AccessToken;
-                if (httpClient.DefaultRequestHeaders.Contains("Authentication"))
-                {
-                    httpClient.DefaultRequestHeaders.Remove("Authentication");
-                }
-                httpClient.DefaultRequestHeaders.Add("Authentication", $"Bearer {this._httpToken}");
-                if (httpClient.DefaultRequestHeaders.Contains("Authorization"))
-                {
-                    httpClient.DefaultRequestHeaders.Remove("Authorization");
-                }
-                httpClient.DefaultRequestHeaders.Add("Authorization", $"Bearer {this._httpToken}");
-            }
-            catch (MsalServiceException ex)
-            {
-                // Case when ex.Message contains:
-                // AADSTS70011 Invalid scope. The scope has to be of the form "https://resourceUrl/.default"
-                // Mitigation: change the scope to be as expected
-                throw ex;
-            }
-        }
-
-        //private async Task<bool> EnsureUnpToken()
-        private bool EnsureUnpToken()
-        {
-            if (string.IsNullOrWhiteSpace(_httpToken))
-            {
-                throw new System.Security.Authentication.AuthenticationException("'Username & pwd' token is empty");
-            }
-            //else
-            //{
-            //    if (DateTime.Now < dtFirstStart.AddSeconds(3600) && DateTime.Now > dtNextConnRefresh)
-            //    {
-            //        await this.ConnectWithUnp();
-            //        dtNextConnRefresh = dtNextConnRefresh.AddSeconds(connRefrSeconds);
-            //    }
-            //}
-
-            return true;
-        }
+                _logger.LogTrace("Add access token to request message");
+                _bearerToken = authResult.AccessToken;
+                requestMessage
+                    .Headers
+                    .Authorization = new AuthenticationHeaderValue("Bearer", authResult.AccessToken);
+            }));
+        }     
 
         /// <summary>
         /// List all the groups in an organization, including but not limited to Microsoft 365 groups.
@@ -151,7 +107,7 @@ namespace Proge.Teams.Edu.GraphApi
                 var users = await graphClient.Users
                        .Request()
                        .Filter(filter)
-                       .Select("id,userPrincipalName,givenName,surname")//,jobTitle,officeLocation,department,mail,assignedLicenses")
+                       .Select("id,userPrincipalName,givenName,surname,mail")//,jobTitle,officeLocation,department,mail,assignedLicenses")
                        .GetAsync();
 
                 // Check assignedLiceses as A1+ only have Teams
@@ -589,7 +545,7 @@ namespace Proge.Teams.Edu.GraphApi
             }
             catch (Exception ex)
             {
-                _logger.LogWarning($"Team not found in group {id}");
+                _logger.LogWarning(ex, $"Team not found in group {id}");
             }
 
             var members = await GetTeamMembers(id);
@@ -649,17 +605,23 @@ namespace Proge.Teams.Edu.GraphApi
             while (classes.Count > 0)
             {
                 allClasses.AddRange(classes);
-                if (classes.NextPageRequest != null)
-                {
-                    classes = await classes.NextPageRequest
-                        .GetAsync();
-                }
-                else
-                {
+                if (classes.NextPageRequest == null)
                     break;
-                }
+
+                classes = await classes.NextPageRequest.GetAsync();
             }
+
             return allClasses;
+        }
+
+        public async Task<EducationClass> GetEducationClassByMailNickname(string mailNickname)
+        {
+            var classes = await graphClient.Education.Classes
+                .Request()
+                .Filter($"$filter=mailNickname eq '{mailNickname}'")
+                .GetAsync();
+
+            return classes.FirstOrDefault();
         }
 
         /// <summary>
@@ -721,8 +683,17 @@ namespace Proge.Teams.Edu.GraphApi
 
                 //return deletedGroups;
 
-                EnsureUnpToken();
-                HttpResponseMessage response = await httpClient.GetAsync($"https://graph.microsoft.com/v1.0/directory/deletedItems/microsoft.graph.group?$Filter={filter}");
+                var requestMessage = new HttpRequestMessage
+                {
+                    Method = HttpMethod.Get,
+                    RequestUri = new Uri($"https://graph.microsoft.com/v1.0/directory/deletedItems/microsoft.graph.group?$Filter={filter}")
+                };
+
+                if (string.IsNullOrWhiteSpace(_bearerToken))
+                    throw new System.Security.Authentication.AuthenticationException("Bearer token is empty");
+                requestMessage.Headers.Authorization = new AuthenticationHeaderValue("Bearer", _bearerToken);
+
+                var response = await httpClient.SendAsync(requestMessage);
 
                 string sResponse = await response.Content.ReadAsStringAsync();
                 if (response.IsSuccessStatusCode)
@@ -749,9 +720,11 @@ namespace Proge.Teams.Edu.GraphApi
         /// <returns>The Microsoft.Graph.EducationClass object.</returns>
         public EducationClass DefaultEducationalClassFactory(IEducationalClassTeam educationalClassTeam)
         {
+            if (educationalClassTeam.Key.Length > 64)
+                _logger.LogWarning($"The team '{educationalClassTeam.Key}' exceed the length 64");
             return new EducationClass
             {
-                MailNickname = educationalClassTeam.Key,
+                MailNickname = educationalClassTeam.Key.Length > 64 ? educationalClassTeam.Key.Substring(0, 63) : educationalClassTeam.Key,
                 //MS Graph limit on length
                 DisplayName = educationalClassTeam.Name.Length >= 120 ? educationalClassTeam.Name.Substring(0, 120) : educationalClassTeam.Name,
                 Description = educationalClassTeam.Description,

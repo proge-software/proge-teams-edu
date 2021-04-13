@@ -1,14 +1,17 @@
-﻿
-using System;
-using System.Collections.Generic;
-using System.Text;
+﻿using System.Collections.Generic;
 using System.Threading.Tasks;
 
 namespace Proge.Teams.Edu.Abstraction
 {
-    public interface IJob
+    public interface IJob : IJobReader, IJobWriter { }
+
+    public interface IJobReader
     {
-        Task<IEnumerable<IEducationalClassTeam>> Read();       
-        Task Write(IEnumerable<IEducationalClassTeam> insegnamenti);       
+        Task<IEnumerable<IEducationalClassTeam>> Read();
+    }
+
+    public interface IJobWriter
+    {
+        Task Write(IEnumerable<IEducationalClassTeam> insegnamenti);
     }
 }
