@@ -4,19 +4,16 @@ FROM mcr.microsoft.com/azure-functions/dotnet:3.0 AS base
 WORKDIR /home/site/wwwroot
 EXPOSE 80
 
-FROM mcr.microsoft.com/dotnet/sdk:3.1 AS build
+FROM mcr.microsoft.com/dotnet/core/sdk:3.1-buster AS build
 WORKDIR /src
-COPY ["src/Proge.Teams.Edu.TeamsDashboard/nuget.config", "src/Proge.Teams.Edu.TeamsDashboard/"]
-COPY ["src/Proge.Teams.Edu.Abstraction/nuget.config", "src/Proge.Teams.Edu.Abstraction/"]
-COPY ["test/Proge.Teams.Edu.Function/Proge.Teams.Edu.Function.csproj", "test/Proge.Teams.Edu.Function/"]
-COPY ["src/Proge.Teams.Edu.TeamsDashboard/Proge.Teams.Edu.TeamsDashboard.csproj", "src/Proge.Teams.Edu.TeamsDashboard/"]
-COPY ["src/Proge.Teams.Edu.Abstraction/Proge.Teams.Edu.Abstraction.csproj", "src/Proge.Teams.Edu.Abstraction/"]
-COPY ["src/Proge.Teams.Edu.DAL/Proge.Teams.Edu.DAL.csproj", "src/Proge.Teams.Edu.DAL/"]
-COPY ["src/Proge.Teams.Edu.GraphApi/Proge.Teams.Edu.GraphApi.csproj", "src/Proge.Teams.Edu.GraphApi/"]
-COPY ["src/Proge.Teams.Edu.Web/Proge.Teams.Edu.Web.csproj", "src/Proge.Teams.Edu.Web/"]
-RUN dotnet restore "test/Proge.Teams.Edu.Function/Proge.Teams.Edu.Function.csproj"
+COPY ["Proge.Teams.Edu.Function/Proge.Teams.Edu.Function.csproj", "Proge.Teams.Edu.Function/"]
+COPY ["Proge.Teams.Edu.DAL/Proge.Teams.Edu.DAL.csproj", "Proge.Teams.Edu.DAL/"]
+COPY ["Proge.Teams.Edu.Abstraction/Proge.Teams.Edu.Abstraction.csproj", "Proge.Teams.Edu.Abstraction/"]
+COPY ["Proge.Teams.Edu.TeamsDashboard/Proge.Teams.Edu.TeamsDashboard.csproj", "Proge.Teams.Edu.TeamsDashboard/"]
+COPY ["Proge.Teams.Edu.GraphApi/Proge.Teams.Edu.GraphApi.csproj", "Proge.Teams.Edu.GraphApi/"]
+RUN dotnet restore "Proge.Teams.Edu.Function/Proge.Teams.Edu.Function.csproj"
 COPY . .
-WORKDIR "/src/test/Proge.Teams.Edu.Function"
+WORKDIR "/src/Proge.Teams.Edu.Function"
 RUN dotnet build "Proge.Teams.Edu.Function.csproj" -c Release -o /app/build
 
 FROM build AS publish

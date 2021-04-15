@@ -13,5 +13,6 @@ namespace Proge.Teams.Edu.Abstraction
         Task RenewSubscription(string id);
         Task<bool> GetSubscriptions();
         Task<Beta.CallRecords.CallRecord> GetCallRecord(string callId);
+        Task<Beta.OnlineMeeting> GetOnlineMeeting(string userId, string joinWebUrl);
     }
 }

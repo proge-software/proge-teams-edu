@@ -45,8 +45,19 @@ namespace Proge.Teams.Edu.DAL.Configurations
             builder.Property(p => p.MeetingHierarchy)
                 .HasMaxLength(10);
 
-            builder.Property(p => p.CustomAttribute)
+            builder.Property(p => p.CustomAttribute);
+
+            builder.Property(p => p.Attendees);
+            builder.Property(p => p.ChatThreadId)
                 .HasMaxLength(255);
+
+            builder.Property(p => p.ChatMessageId)
+                .HasMaxLength(255);
+
+            builder.Property(p => p.CreationDateTime);
+
+            // Indices
+            builder.HasIndex(i => i.MeetingId);
         }
     }
 }

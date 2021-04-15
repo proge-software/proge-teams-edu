@@ -1,4 +1,5 @@
-﻿using Microsoft.Extensions.Logging;
+﻿using System.Threading;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using System;
 using System.Collections.Generic;
@@ -7,6 +8,7 @@ using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Text;
 using System.Threading.Tasks;
+using System.Net;
 
 namespace Proge.Teams.Edu.Esse3
 {
@@ -19,11 +21,15 @@ namespace Proge.Teams.Edu.Esse3
     {
         private readonly Esse3Settings _esse3Settings;
         private readonly ILogger<RetryManager> _logger;
-        public RetryManager(ILogger<RetryManager> logger, IOptions<Esse3Settings> unimoresettings)
+
+        public RetryManager(
+            IOptions<Esse3Settings> settings,
+            ILogger<RetryManager> logger)
         {
-            _esse3Settings = unimoresettings.Value;
+            _esse3Settings = settings.Value;
             _logger = logger;
         }
+
         public async Task<HttpResponseMessage> DoSendAsyncRequest<T>(
             HttpClient client,
             HttpMethod method,
@@ -32,43 +38,63 @@ namespace Proge.Teams.Edu.Esse3
             params string[] queryString)
         {
             var exceptions = new List<Exception>();
-            int retryCount = 1;
-            TimeSpan retryInterval = TimeSpan.FromSeconds(_esse3Settings.RetryDelay);
-            for (int attempted = 1; attempted <= _esse3Settings.MaxAttemptCount; attempted++)
+
+            int attempt = 1, maxAttempt = _esse3Settings.MaxAttemptCount;
+            for (; attempt <= maxAttempt; attempt++)
             {
-                retryCount = attempted;
+                HttpRequestMessage requestMessage = RequestMessageFactory(method, _esse3Settings, jSession, url, queryString);
+                _logger.LogDebug("Performing ({0}, {1}) {2} to {3}", attempt, maxAttempt, method, requestMessage.RequestUri);
+
                 HttpResponseMessage res = null;
                 try
                 {
-                    if (attempted > 1)
-                        await Task.Delay(retryInterval);
-                    else
-                        await Task.Delay(TimeSpan.FromMilliseconds(300));
-
-                    var requestMessage = RequestMessageFactory(method, _esse3Settings, jSession, url, queryString);
-                    _logger.LogDebug($"Esse3 Client Request: {requestMessage.RequestUri}");
-                    res = await client.SendAsync(requestMessage);
-                    res.EnsureSuccessStatusCode();
+                    res = await PerformRequest(client, requestMessage, attempt, maxAttempt);
                     return res;
                 }
+                catch (Exception) when (res?.StatusCode != (HttpStatusCode)429) { throw; }
                 catch (Exception ex)
                 {
-                    var r = res != null && res.Content != null && res.Content.Headers != null 
-                        ? string.Join(";", res.Content.Headers.Select(a => $"Key:{a.Key}-Value:{string.Join(",",a.Value)}")) 
-                        : string.Empty;
-                    _logger.LogError(ex, $"Esse3 Client Request: Retry {attempted} of {_esse3Settings.MaxAttemptCount}. Status Code: {(res != null ? res.StatusCode.ToString() :"null response" ) }. Response header: {r}");
-                    if (res != null && res.StatusCode == (System.Net.HttpStatusCode)429)
-                        exceptions.Add(ex);
-                    else
-                        throw ex;
+                    // store exception from 429
+                    exceptions.Add(ex);
+
+                    // wait until next retry
+                    TimeSpan timeToWait = TimeToWait(attempt);
+                    await Task.Delay(timeToWait);
                 }
             }
-            if (retryCount >= _esse3Settings.MaxAttemptCount)
-                throw new AggregateException(exceptions);
-            else
-                return default;
+
+            throw new AggregateException(exceptions);
         }
 
+        private async Task<HttpResponseMessage> PerformRequest(HttpClient client, HttpRequestMessage requestMessage, int attempt, int maxAttempt)
+        {
+            HttpResponseMessage res = null;
+            try
+            {
+                res = await client.SendAsync(requestMessage);
+                res.EnsureSuccessStatusCode();
+                return res;
+            }
+            catch (Exception ex)
+            {
+                // log
+                string headers = string.Join(";", res?.Content?.Headers?.Select(a => $"Key:{a.Key}-Value:{string.Join(",", a.Value)}"));
+                _logger.LogError(ex, "Retry {0}/{1}. Status Code: {2}. Response headers: {3}",
+                    attempt, maxAttempt, res?.StatusCode.ToString() ?? "null response", headers);
+                throw;
+            }
+        }
+
+        private TimeSpan TimeToWait(int attempt)
+        {
+            if (attempt <= 0)
+                throw new ArgumentException($"Attempt must be a positive integer; given {attempt}");
+
+            int retryDelay = _esse3Settings.RetryDelay;
+            double secToWait = retryDelay * Math.Pow(2, attempt);
+            TimeSpan timeToWait = TimeSpan.FromSeconds(secToWait);
+            return timeToWait;
+        }
 
         private HttpRequestMessage RequestMessageFactory(HttpMethod httpMethod, Esse3Settings esse3Settings, string jSession, string url, params string[] queryString)
         {

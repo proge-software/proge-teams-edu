@@ -3,7 +3,7 @@
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
     <LangVersion>8.0</LangVersion>
-    <Version>1.0.6</Version>
+    <Version>1.0.7</Version>
     <Authors>Francesco Venturini</Authors>
     <Company>Proge-Software</Company>
     <PackageDescription>Project containing a REST API client with a set of requests in order to comunicate with CINECA ESSE3 standard API</PackageDescription>

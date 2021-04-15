@@ -99,7 +99,7 @@ namespace Proge.Teams.Edu.Web
             catch (Exception e)
             {
                 _logger.LogError(e, $"Error at '{nameof(functionName)}'");
-                Console.WriteLine(e);
+                throw;
             }
             finally
             {

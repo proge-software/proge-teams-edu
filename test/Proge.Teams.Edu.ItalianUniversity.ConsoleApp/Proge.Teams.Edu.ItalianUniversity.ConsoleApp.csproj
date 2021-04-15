@@ -21,7 +21,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\src\Proge.Teams.Edu.GraphApi\Proge.Teams.Edu.GraphApi.csproj" />
     <ProjectReference Include="..\Proge.Teams.Edu.ItalianUniversity\Proge.Teams.Edu.ItalianUniversity.csproj" />
   </ItemGroup>
 

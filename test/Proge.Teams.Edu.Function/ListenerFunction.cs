@@ -3,14 +3,14 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.Azure.WebJobs;
 using Microsoft.Azure.WebJobs.Extensions.Http;
 using Microsoft.Extensions.Logging;
-using Proge.Teams.Edu.TeamsDashaborad;
 using Proge.Teams.Edu.Web;
-using System;
-using System.Net;
 using System.Threading.Tasks;
 
 namespace Proge.Teams.Edu.Function
 {
+    /// <summary>
+    /// Endpoint la gestione delle notifiche attraverso WebHook da parte di Microsoft Graph per il servizio Microsoft Teams
+    /// </summary>
     public class ListenerFunction
     {
 
