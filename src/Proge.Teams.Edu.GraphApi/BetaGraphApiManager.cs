@@ -10,6 +10,7 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using Microsoft.Graph;
 using System.Net.Http.Headers;
+using System.Linq;
 
 namespace Proge.Teams.Edu.GraphApi
 {
@@ -41,6 +42,27 @@ namespace Proge.Teams.Edu.GraphApi
                     .Authorization = new AuthenticationHeaderValue("Bearer", authResult.AccessToken);
             }));
         }
+
+        public async Task<Beta.OnlineMeeting> GetOnlineMeeting(string userId, string joinWebUrl)
+        {
+            try
+            {
+                string filter = string.Format("JoinWebUrl%20eq%20'{0}'", joinWebUrl);
+
+                var onlineMeetingsRequest = graphClient.Users[userId].OnlineMeetings
+                    .Request()
+                    .Filter(filter);
+                var onlineMeetings = await onlineMeetingsRequest.GetAsync();
+                var json = System.Text.Json.JsonSerializer.Serialize(onlineMeetings);
+                return onlineMeetings.CurrentPage.FirstOrDefault();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, $"GetOnlineMeeting: ");
+                return null;
+            }
+        }
+
         public async Task<Beta.Subscription> AddSubscription(string changeType, string resource, DateTimeOffset? expirationOffset, string clientStateSecret,
              string notificationUrl)
         {

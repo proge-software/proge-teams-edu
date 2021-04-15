@@ -27,8 +27,8 @@ namespace Proge.Teams.Edu.Function
             var configuration = new ConfigurationBuilder()
                    .SetBasePath(Directory.GetCurrentDirectory())
                    .AddJsonFile("appsettings.json", true, true)
-                   //.AddJsonFile("appsettings.local.json", optional: true, reloadOnChange: true) //load local settings
-                   .AddJsonFile("appsettings.release.json", optional: true, reloadOnChange: true) //load local settings
+                   .AddJsonFile("appsettings.local.json", optional: true, reloadOnChange: true) //load local settings
+                   //.AddJsonFile("appsettings.release.json", optional: true, reloadOnChange: true) //load local settings
                    .AddEnvironmentVariables()
                    .Build();
 
@@ -44,6 +44,7 @@ namespace Proge.Teams.Edu.Function
             services.AddScoped<IAzureADJwtBearerValidation, AzureADJwtBearerValidation>();
             services.AddScoped<ITeamsDashboardFunctionsService, TeamsDashboardFunctionsService>();
             services.AddScoped<ICallRecordRepository, CallRecordRepository>();
+            services.AddScoped<ITeamsMeetingRepository, TeamsMeetingRepository>();
             services.Configure<AuthenticationConfig>(configuration.GetSection("ApplicationAuthentication"));
             services.Configure<UniSettings>(configuration.GetSection("UniSettings"));
             services.Configure<CallFilters>(configuration.GetSection("CallFilters"));

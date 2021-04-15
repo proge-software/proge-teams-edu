@@ -29,8 +29,8 @@ namespace Proge.Teams.Edu.DAL.Repositories
         {
             if (await this.GetExistsAsync<TeamsMeeting>(a => a.JoinUrl == joinUrl))
                 return await this.GetByIdAsync<TeamsMeeting, string>(joinUrl);
-            else
-                return null;
+            
+            return null;
         }
 
         public async Task BulkWriteCallRecordAsync(List<CallRecord> callRecordList)

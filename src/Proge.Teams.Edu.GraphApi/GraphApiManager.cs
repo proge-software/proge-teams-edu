@@ -165,7 +165,7 @@ namespace Proge.Teams.Edu.GraphApi
 
             try
             {
-                await Retry.Do<Task>(async () => await graphClient.Groups[$"{groupid}"].Owners.References
+                await Retry.Do(async () => await graphClient.Groups[$"{groupid}"].Owners.References
                        .Request()
                        .AddAsync(directoryObject), TimeSpan.FromSeconds(_authenticationConfig.RetryDelay), 2);
             }
@@ -205,7 +205,7 @@ namespace Proge.Teams.Edu.GraphApi
             var directoryObject = new DirectoryObject { Id = id };
             try
             {
-                await Retry.Do<Task>(async () => await graphClient.Groups[$"{groupid}"].Members.References
+                await Retry.Do(async () => await graphClient.Groups[$"{groupid}"].Members.References
                        .Request()
                        .AddAsync(directoryObject), TimeSpan.FromSeconds(_authenticationConfig.RetryDelay), 2);
             }

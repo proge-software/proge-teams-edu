@@ -34,10 +34,10 @@ namespace Proge.Teams.Edu.Function
             IOptions<CustomCallFilters> callFilter,
             IBetaGraphApiManager betaGraphApi,
             ILogger<CustomTeamsDataCollectorManager> logger,
-            ICallRecordRepository ichangenotrep) : base(uniCfg, callFilter, betaGraphApi, logger, ichangenotrep)
-        {
-
-        }
+            ICallRecordRepository ichangenotrep,
+            ITeamsMeetingRepository teamsMeetingRepository) 
+        : base(uniCfg, callFilter, betaGraphApi, logger, ichangenotrep, teamsMeetingRepository)
+        { }
 
         protected async override Task<bool> CallToSave(Beta.CallRecords.CallRecord receivedCallRecord)
         {

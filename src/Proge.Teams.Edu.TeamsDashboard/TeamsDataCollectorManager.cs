@@ -1,4 +1,5 @@
 ﻿extern alias BetaLib;
+using System.Threading;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Newtonsoft.Json;
@@ -28,22 +29,26 @@ namespace Proge.Teams.Edu.TeamsDashaborad
 
     public class TeamsDataCollectorManager : ITeamsDataCollectorManager
     {
-        protected readonly IBetaGraphApiManager betaGraphApiManager;
+        protected readonly IBetaGraphApiManager _betaGraphApiManager;
         protected readonly ILogger<TeamsDataCollectorManager> _logger;
-        protected readonly UniSettings uniSettings;
+        protected readonly UniSettings _uniSettings;
         protected readonly CallFilters callFilters;
         protected readonly ICallRecordRepository _callRecordRepo;
+        protected readonly ITeamsMeetingRepository _teamsMeetingRepository;
+
         public TeamsDataCollectorManager(IOptions<UniSettings> uniCfg,
             IOptions<CallFilters> callFilter,
             IBetaGraphApiManager betaGraphApi,
             ILogger<TeamsDataCollectorManager> logger,
-            ICallRecordRepository ichangenotrep)
+            ICallRecordRepository ichangenotrep,
+            ITeamsMeetingRepository teamsMeetingRepository)
         {
-            betaGraphApiManager = betaGraphApi;
-            uniSettings = uniCfg.Value;
+            _betaGraphApiManager = betaGraphApi;
+            _uniSettings = uniCfg.Value;
             _logger = logger;
             callFilters = callFilter.Value;
             _callRecordRepo = ichangenotrep;
+            _teamsMeetingRepository = teamsMeetingRepository;
         }
 
 
@@ -55,7 +60,7 @@ namespace Proge.Teams.Edu.TeamsDashaborad
                 string errMsgs = "WriteTeamsMeetingTable:";
                 string retMessage = string.Empty;
 
-                if (senderCheckKey == uniSettings.SenderKey)
+                if (senderCheckKey == _uniSettings.SenderKey)
                 {
                     using (StreamReader reader = new StreamReader(body, Encoding.UTF8, true, 1024, true))
                     {
@@ -141,57 +146,50 @@ namespace Proge.Teams.Edu.TeamsDashaborad
                 using (StreamReader reader = new StreamReader(body, Encoding.UTF8, true, 1024, true))
                 {
                     var bodyStr = reader.ReadToEnd();
-                    var collection = JsonConvert.DeserializeObject<Beta.ChangeNotificationCollection>(bodyStr);
-
-                    _logger.LogInformation(bodyStr);
+                    var collection = System.Text.Json.JsonSerializer.Deserialize<Beta.ChangeNotificationCollection>(bodyStr);
+                    
+                    // filter notification
+                    var filteredNotification = collection.Value.Where(x
+                        => x.EncryptedContent == null
+                            // Verify the current client state matches the one that was sent.
+                            && x.ClientState == _uniSettings.ClientStateSecret
+                            // Verify ODataId is set for given notification
+                            && x.ResourceData?.AdditionalData["id"] != null);
 
                     // Parse the received notifications.
                     var plainNotifications = new Dictionary<string, Beta.ChangeNotification>();
-                    var options = new JsonSerializerOptions
+                    foreach (var notification in filteredNotification)
                     {
-                        PropertyNameCaseInsensitive = true
-                    };
+                        // Just keep the latest notification for each resource. No point pulling data more than once.
+                        plainNotifications[notification.Resource] = notification;
 
-                    foreach (var notification in collection.Value.Where(x => x.EncryptedContent == null))
-                    {
-                        // Verify the current client state matches the one that was sent.
-                        if (notification.ClientState.Equals(uniSettings.ClientStateSecret))
+                        var changeNot = new DAL.Entities.ChangeNotification
                         {
-                            // Just keep the latest notification for each resource. No point pulling data more than once.
-                            plainNotifications[notification.Resource] = notification;
+                            Id = Guid.NewGuid(),
+                            RawJson = bodyStr,
+                            SubscriptionId = notification.SubscriptionId,
+                            SubscriptionExpirationDateTime = notification.SubscriptionExpirationDateTime,
+                            TenantId = notification.TenantId,
+                            ChangeType = notification.ChangeType,
+                            Resource = notification.Resource,
+                            ODataType = notification.ResourceData?.ODataType ?? notification.ODataType,
+                            ODataId = notification.ResourceData.AdditionalData["id"].ToString()
+                        };
 
-                            var changeNot = new DAL.Entities.ChangeNotification()
-                            {
-                                Id = Guid.NewGuid(),
-                                RawJson = bodyStr,
-                                SubscriptionId = notification.SubscriptionId,
-                                SubscriptionExpirationDateTime = notification.SubscriptionExpirationDateTime,
-                                TenantId = notification.TenantId,
-                                ChangeType = notification.ChangeType,
-                                Resource = notification.Resource,
-                                ODataType = notification.ResourceData != null ? notification.ResourceData.ODataType : notification.ODataType,
-                                ODataId = notification.ResourceData != null
-                                && notification.ResourceData.AdditionalData != null
-                                && !string.IsNullOrWhiteSpace(notification.ResourceData.AdditionalData["id"].ToString()) ?
-                                notification.ResourceData.AdditionalData["id"].ToString() : string.Empty
-                            };
+                        // Save CallRecord, if not to discard according to config filters
+                        Beta.CallRecords.CallRecord receivedCallRecord = await _betaGraphApiManager.GetCallRecord(changeNot.ODataId);
+                        if (!await CallToSave(receivedCallRecord))
+                            continue;
 
-                            DalCallRecord mappedCallRecord = new DalCallRecord();
-                            if (!string.IsNullOrWhiteSpace(changeNot.ODataId))
-                            {
-                                Beta.CallRecords.CallRecord receivedCallRecord = await betaGraphApiManager.GetCallRecord(changeNot.ODataId);
+                        // save call record
+                        var mappedCallRecord = await MapReceivedCallRecord(receivedCallRecord);
 
-                                // Save CallRecord, if not to discard according to config filters
-                                if (await CallToSave(receivedCallRecord))
-                                {
-                                    mappedCallRecord = await MapReceivedCallRecord(receivedCallRecord);
+                        await _callRecordRepo.CreateAsync(mappedCallRecord);
+                        await _callRecordRepo.InsertChangeNotification(changeNot);
+                        await _callRecordRepo.SaveAsync();
 
-                                    await _callRecordRepo.CreateAsync(mappedCallRecord);
-                                    await _callRecordRepo.InsertChangeNotification(changeNot);
-                                    await _callRecordRepo.SaveAsync();
-                                }
-                            }
-                        }
+                        // save online meeting details
+                        await CreateOrUpdateOnlineMeeting(receivedCallRecord.Organizer.User.Id, receivedCallRecord.JoinWebUrl);
                     }
                 }
             }
@@ -199,6 +197,42 @@ namespace Proge.Teams.Edu.TeamsDashaborad
             {
                 _logger.LogError($"ProcessNotification: { ex.Message }");
             }
+        }
+
+        private async Task CreateOrUpdateOnlineMeeting(string organizerId, string joinWebUrl, CancellationToken cancellationToken = default)
+        {
+            Beta.OnlineMeeting onlineMeeting = await _betaGraphApiManager.GetOnlineMeeting(organizerId, joinWebUrl);
+            if (onlineMeeting == null)
+            {
+                _logger.LogWarning(
+                    "Can not retrieve details for online meeting: probably the meeting is older than 30 days and Microsoft Graph deleted the data."
+                    + " Also ensure you have enabled on Azure the policy for the app registration to act as organizer with id {0}."
+                    + " JoinWebUrl {1}",
+                    organizerId, joinWebUrl);
+                return;
+            }
+
+            bool exists = await _teamsMeetingRepository.ExistByJoinUrl(joinWebUrl);
+            if (!exists)
+            {
+                await CreateOnlineMeeting(onlineMeeting, cancellationToken);
+                return;
+            }
+
+            await UpdateOnlineMeeting(onlineMeeting, cancellationToken);
+        }
+        private async Task CreateOnlineMeeting(Beta.OnlineMeeting onlineMeeting, CancellationToken cancellationToken = default)
+        {
+            _logger.LogDebug("Creating Teams Meeting with id {0}", onlineMeeting.Id);
+            var meeting = new TeamsMeeting(onlineMeeting);
+            await _teamsMeetingRepository.Create(meeting, cancellationToken);
+        }
+
+        private async Task UpdateOnlineMeeting(Beta.OnlineMeeting onlineMeeting, CancellationToken cancellationToken = default)
+        {
+            _logger.LogDebug("Updating Teams Meeting with id {0}", onlineMeeting.Id);
+            var meeting = new TeamsMeeting(onlineMeeting);
+            await _teamsMeetingRepository.UpdateMeeting(meeting);
         }
 
         public virtual async Task<(bool IsSuccess, string RetMessage)> ProcessChangeNotification()
@@ -230,7 +264,7 @@ namespace Proge.Teams.Edu.TeamsDashaborad
             {
                 try
                 {
-                    Beta.CallRecords.CallRecord receivedCallRecord = await betaGraphApiManager.GetCallRecord(callId);
+                    Beta.CallRecords.CallRecord receivedCallRecord = await _betaGraphApiManager.GetCallRecord(callId);
 
                     if (receivedCallRecord != null)
                     {
@@ -311,14 +345,11 @@ namespace Proge.Teams.Edu.TeamsDashaborad
 
         public virtual async Task SubscribeCallRecords()
         {
-            //var subscription = new 
-
-            bool renewedSubscription = await betaGraphApiManager.GetSubscriptions();
-
+            bool renewedSubscription = await _betaGraphApiManager.GetSubscriptions();
             if (!renewedSubscription)
             {
-                var x = await betaGraphApiManager.AddSubscription(uniSettings.ChangeType, uniSettings.Resource, new DateTimeOffset(DateTime.UtcNow.AddDays(2)),
-                    uniSettings.ClientStateSecret, uniSettings.NotificationUrl);
+                var x = await _betaGraphApiManager.AddSubscription(_uniSettings.ChangeType, _uniSettings.Resource, new DateTimeOffset(DateTime.UtcNow.AddDays(2)),
+                    _uniSettings.ClientStateSecret, _uniSettings.NotificationUrl);
             }
         }
 

@@ -574,14 +574,7 @@ namespace Proge.Teams.Edu.Esse3
 
             response.EnsureSuccessStatusCode();
             string res = await response.Content.ReadAsStringAsync();
-            try
-            {
-                return JsonSerializer.Deserialize<IEnumerable<Logistica>>(res, DefaultSerializerOption);
-            }
-            catch (Exception e)
-            {
-                throw;
-            }
+            return JsonSerializer.Deserialize<IEnumerable<Logistica>>(res, DefaultSerializerOption);
         }
         #endregion
 
