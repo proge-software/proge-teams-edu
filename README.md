@@ -62,8 +62,6 @@ Licensed under [Creative Commons Attribution-NonCommercial-ShareAlike 4.0 Intern
 
 [![CC BY-NC-SA 4.0][cc-by-nc-sa-image]][cc-by-nc-sa]
 
-See [Third Party Notices](https://github.com/microsoftgraph/msgraph-sdk-dotnet/blob/master/THIRD%20PARTY%20NOTICES) for information on the packages referenced via NuGet.
-
 
 <!-- external links -->
 [cc-by-nc-sa]: http://creativecommons.org/licenses/by-nc-sa/4.0/
