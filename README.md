@@ -1,5 +1,6 @@
 # Proge-software Teams Connector powered by Microsoft Graph API
 
+[![CC BY-NC-SA 4.0][cc-by-nc-sa-shield]][cc-by-nc-sa]
 [![NuGet Version](https://buildstats.info/nuget/Proge.Teams.Edu.Abstraction)](https://www.nuget.org/packages/Proge.Teams.Edu.Abstraction/)
 [![NuGet Version](https://buildstats.info/nuget/Proge.Teams.Edu.GraphApi)](https://www.nuget.org/packages/Proge.Teams.Edu.GraphApi/)
 [![NuGet Version](https://buildstats.info/nuget/Proge.Teams.Edu.Esse3)](https://www.nuget.org/packages/Proge.Teams.Edu.Esse3/)
@@ -54,4 +55,15 @@ Based on the .NET built in dependancy injection Engine
 
 ## License
 
-Copyright (c) Proge-Software srl. All Rights Reserved. Licensed under the MIT [license](LICENSE.txt). See [Third Party Notices](https://github.com/microsoftgraph/msgraph-sdk-dotnet/blob/master/THIRD%20PARTY%20NOTICES) for information on the packages referenced via NuGet.
+Copyright (c) Proge-Software srl. All Rights Reserved.
+Licensed under [Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International License][cc-by-nc-sa].
+[![CC BY-NC-SA 4.0][cc-by-nc-sa-image]][cc-by-nc-sa]
+
+See [Third Party Notices](https://github.com/microsoftgraph/msgraph-sdk-dotnet/blob/master/THIRD%20PARTY%20NOTICES) for information on the packages referenced via NuGet.
+
+
+<!-- external links -->
+[cc-by-nc-sa]: http://creativecommons.org/licenses/by-nc-sa/4.0/
+[cc-by-nc-sa-image]: https://licensebuttons.net/l/by-nc-sa/4.0/88x31.png
+[cc-by-nc-sa-shield]: https://img.shields.io/badge/License-CC%20BY--NC--SA%204.0-lightgrey.svg
+
