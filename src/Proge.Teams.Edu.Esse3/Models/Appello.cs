@@ -152,6 +152,9 @@ namespace Proge.Teams.Edu.Esse3.Models
         public string tipoGestPrenDes { get; set; }
         public TipoIscrCod tipoIscrCod { get; set; }
         public int tipoSceltaTurno { get; set; }
+        public IEnumerable<AppelloCommissione> commissione { get; set; }
+        public IEnumerable<Sessione> sessioni { get; set; }
+        public IEnumerable<Turno> turni { get; set; }
 
         [JsonIgnore]
         public DateTime? DataInizioApp

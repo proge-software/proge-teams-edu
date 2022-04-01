@@ -3,6 +3,7 @@ using Proge.Teams.Edu.Abstraction;
 using System;
 using System.Collections.Generic;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Proge.Teams.Edu.ItalianUniversity.ConsoleApp
@@ -18,7 +19,7 @@ namespace Proge.Teams.Edu.ItalianUniversity.ConsoleApp
             _logger = logger;
         }
 
-        public async Task Run(string[] args)
+        public async Task Run(string[] args, CancellationToken cancellationToken = default)
         {
             _logger.LogInformation("ItalianUniversity application started at {dateTime}", DateTime.Now);
 
@@ -26,5 +27,6 @@ namespace Proge.Teams.Edu.ItalianUniversity.ConsoleApp
 
             _logger.LogInformation("ItalianUniversity application ended at {dateTime}", DateTime.Now);
         }
+
     }
 }

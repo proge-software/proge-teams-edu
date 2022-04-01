@@ -14,4 +14,22 @@ namespace Proge.Teams.Edu.GraphApi.Models
         public Value value { get; set; }
         public string type { get; set; }
     }
+
+    public class OnlineMeetingOptionEditRequest
+    {
+        public OnlineMeetingOptionEditRequestItem[] options { get; set; }
+    }
+
+    public class OnlineMeetingOptionEditRequestItem
+    {
+        public string currentValue { get; set; }
+        public string name { get; set; }
+        public string type { get; set; }
+
+    }
+
+    public class OnlineMeetingOptionEditResponse
+    {
+        public bool? success { get; set; }
+    }
 }

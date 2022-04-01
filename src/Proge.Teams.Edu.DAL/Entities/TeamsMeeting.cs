@@ -33,10 +33,10 @@ namespace Proge.Teams.Edu.DAL.Entities
         public DateTime? CreationDateTime { get; set; }
 
         public TeamsMeeting() { }
-        public TeamsMeeting(Beta.OnlineMeeting meeting)
+        public TeamsMeeting(Microsoft.Graph.OnlineMeeting meeting)
         {
             MeetingName = meeting.Subject;
-            JoinUrl = meeting.JoinUrl;
+            JoinUrl = meeting.JoinWebUrl;
             MeetingId = meeting.Id;
             MeetingExtendedName = meeting.Subject;
             OwnerExtended = meeting.Participants.Organizer.Identity.User.DisplayName;

@@ -1,24 +1,24 @@
-﻿using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
-using Microsoft.IdentityModel.Protocols;
-using Microsoft.IdentityModel.Protocols.OpenIdConnect;
-using Microsoft.IdentityModel.Tokens;
-using Proge.Teams.Edu.Abstraction;
-using Proge.Teams.Edu.TeamsDashaborad;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.IdentityModel.Tokens.Jwt;
 using System.Linq;
 using System.Security.Claims;
+using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
+using Microsoft.IdentityModel.Protocols;
+using Microsoft.IdentityModel.Protocols.OpenIdConnect;
+using Microsoft.IdentityModel.Tokens;
+using Proge.Teams.Edu.Abstraction;
 
 namespace Proge.Teams.Edu.TeamsDashboard
 {
     public interface IAzureADJwtBearerValidation
     {
         string GetPreferredUserName();
-        Task<ClaimsPrincipal> ValidateTokenAsync(string authorizationHeader);
+        Task<ClaimsPrincipal> ValidateTokenAsync(string authorizationHeader, CancellationToken cancellationToken = default);
     }
 
     public class AzureADJwtBearerValidation : IAzureADJwtBearerValidation
@@ -30,13 +30,13 @@ namespace Proge.Teams.Edu.TeamsDashboard
         private ConfigurationManager<OpenIdConnectConfiguration> _configurationManager;
         private ClaimsPrincipal _claimsPrincipal;
 
-        private string _wellKnownEndpoint = string.Empty;
-        private string _tenantId = string.Empty;
-        private string _tenant = string.Empty;
-        private List<string> _audience = null;
-        private List<string> _issuer = null;
-        private string _instance = string.Empty;
-        private string _requiredScope = string.Empty;
+        private readonly string _wellKnownEndpoint = string.Empty;
+        private readonly string _tenantId = string.Empty;
+        private readonly string _tenant = string.Empty;
+        private readonly List<string> _audience = null;
+        private readonly List<string> _issuer = null;
+        private readonly string _instance = string.Empty;
+        private readonly string _requiredScope = string.Empty;
 
         public AzureADJwtBearerValidation(IOptions<AuthenticationConfig> authCfg, IOptions<UniSettings> uniCfg, ILogger<AzureADJwtBearerValidation> logger)
         {
@@ -59,7 +59,7 @@ namespace Proge.Teams.Edu.TeamsDashboard
                     };
         }
 
-        public async Task<ClaimsPrincipal> ValidateTokenAsync(string authorizationHeader)
+        public async Task<ClaimsPrincipal> ValidateTokenAsync(string authorizationHeader, CancellationToken cancellationToken = default)
         {
             if (string.IsNullOrEmpty(authorizationHeader))
             {
@@ -73,7 +73,7 @@ namespace Proge.Teams.Edu.TeamsDashboard
 
             var accessToken = authorizationHeader.Substring("Bearer ".Length);
 
-            var oidcWellknownEndpoints = await GetOIDCWellknownConfiguration();
+            var oidcWellknownEndpoints = await GetOIDCWellknownConfiguration(cancellationToken);
 
             var tokenValidator = new JwtSecurityTokenHandler();
 
@@ -91,8 +91,7 @@ namespace Proge.Teams.Edu.TeamsDashboard
 
             try
             {
-                SecurityToken securityToken;
-                _claimsPrincipal = tokenValidator.ValidateToken(accessToken, validationParameters, out securityToken);
+                _claimsPrincipal = tokenValidator.ValidateToken(accessToken, validationParameters, out SecurityToken securityToken);
 
                 if (IsScopeValid(_requiredScope))
                 {
@@ -101,9 +100,9 @@ namespace Proge.Teams.Edu.TeamsDashboard
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex.ToString());
+                _logger.LogError(ex, "Error validating token");
                 if (ex is SecurityTokenExpiredException)
-                    throw ex;
+                    throw;
             }
 
             return null;
@@ -121,13 +120,13 @@ namespace Proge.Teams.Edu.TeamsDashboard
             return preferredUsername;
         }
 
-        private async Task<OpenIdConnectConfiguration> GetOIDCWellknownConfiguration()
+        private async Task<OpenIdConnectConfiguration> GetOIDCWellknownConfiguration(CancellationToken cancellationToken)
         {
             _logger.LogDebug($"Get OIDC well known endpoints {_wellKnownEndpoint}");
             _configurationManager = new ConfigurationManager<OpenIdConnectConfiguration>(
                  _wellKnownEndpoint, new OpenIdConnectConfigurationRetriever());
 
-            return await _configurationManager.GetConfigurationAsync();
+            return await _configurationManager.GetConfigurationAsync(cancellationToken);
         }
 
         private bool IsScopeValid(string scopeName)

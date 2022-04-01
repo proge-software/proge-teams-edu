@@ -33,6 +33,7 @@ namespace Proge.Teams.Edu.DAL.Configurations
                .OnDelete(DeleteBehavior.Restrict);
 
             builder.HasIndex(i => i.Id);
+            builder.HasIndex(i => i.CallUserId);
         }
     }
 }

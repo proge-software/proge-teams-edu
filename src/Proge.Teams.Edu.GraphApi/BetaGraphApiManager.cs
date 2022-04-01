@@ -17,13 +17,17 @@ namespace Proge.Teams.Edu.GraphApi
     public class BetaGraphApiManager : IBetaGraphApiManager
     {
         private readonly ILogger<BetaGraphApiManager> _logger;
+        private IGraphRetrier _retrier { get; set; }
         private readonly AuthenticationConfig _authenticationConfig;
         private IConfidentialClientApplication app { get; set; }
         private Beta.GraphServiceClient graphClient { get; set; }
 
-        public BetaGraphApiManager(IOptions<AuthenticationConfig> authCfg, ILogger<BetaGraphApiManager> logger)
+        public BetaGraphApiManager(IOptions<AuthenticationConfig> authCfg,
+            IGraphRetrier retrier,
+            ILogger<BetaGraphApiManager> logger)
         {
             _logger = logger;
+            _retrier = retrier;
             _authenticationConfig = authCfg.Value;
             app = ConfidentialClientApplicationBuilder.Create(_authenticationConfig.ClientId)
                   .WithAuthority(AzureCloudInstance.AzurePublic, _authenticationConfig.TenantId)
@@ -143,22 +147,14 @@ namespace Proge.Teams.Edu.GraphApi
         }
 
 
-        public async Task<Beta.IReportRootGetTeamsUserActivityUserDetailCollectionPage> GetTeamsUserActivityUserDetail(Microsoft.Graph.Date date)
+        public async Task<System.IO.Stream> GetTeamsUserActivityUserDetail(Microsoft.Graph.Date date)
         {
-            //try
-            //{
             var res = await graphClient.Reports.GetTeamsUserActivityUserDetail(date)
                 .Request()
                 .GetAsync()
                 ;
 
             return res;
-            //}
-            //catch (Exception ex)
-            //{
-            //    _logger.LogWarning(ex, $"GetTeam: Team *probably* not found");
-            //    return null;
-            //}
         }
 
         public async Task<Beta.CallRecords.CallRecord> GetCallRecord(string callId)
@@ -187,7 +183,7 @@ namespace Proge.Teams.Edu.GraphApi
         {
             try
             {
-                var resGroup = await Retry.Do(async () => await graphClient.Teams[$"{id}"]
+                var resGroup = await _retrier.Do(async () => await graphClient.Teams[$"{id}"]
                         .Request()
                         .GetAsync(), TimeSpan.FromSeconds(_authenticationConfig.RetryDelay));
                 return resGroup;

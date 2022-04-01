@@ -8,9 +8,9 @@ namespace Proge.Teams.Edu.Function
 {
     public class StartTeamsProvisioningFunction
     {
-        private readonly IContainerIstanceService _containerIstanceService;
-        private readonly ILogger<ContainerIstanceService> _logger;
-        public StartTeamsProvisioningFunction(IContainerIstanceService containerIstanceService, ILogger<ContainerIstanceService> logger)
+        private readonly IContainerInstanceService _containerIstanceService;
+        private readonly ILogger<StartTeamsProvisioningFunction> _logger;
+        public StartTeamsProvisioningFunction(IContainerInstanceService containerIstanceService, ILogger<StartTeamsProvisioningFunction> logger)
         {
             _containerIstanceService = containerIstanceService;
             _logger = logger;
@@ -23,7 +23,7 @@ namespace Proge.Teams.Edu.Function
             try
             {
                 _logger.LogInformation($"C# Timer trigger '{nameof(StartTeamsProvisioningFunction)}' function executed at: {DateTime.Now}");
-                await _containerIstanceService.StartContainerIstance("TeamsConnector", "iulm-teams-connect-ci", nameof(StartTeamsProvisioningFunction));
+                await _containerIstanceService.StartContainerInstance("TeamsConnector", "iulm-teams-connect-ci", nameof(StartTeamsProvisioningFunction));
             }
             catch (Exception e)
             {

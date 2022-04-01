@@ -4,25 +4,26 @@ using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.Extensions.Logging;
 using Microsoft.IdentityModel.Tokens;
 using Proge.Teams.Edu.DAL;
-using Proge.Teams.Edu.TeamsDashaborad;
 using Proge.Teams.Edu.TeamsDashboard;
 using System;
 using System.Net;
 using System.Security.Claims;
-using System.Security.Cryptography;
-using System.Text.Encodings.Web;
 using System.Threading.Tasks;
-
 
 namespace Proge.Teams.Edu.Web
 {
+    [Obsolete]
     public interface ITeamsDashboardFunctionsService
     {
+        [Obsolete("Use Proge.Teams.Edu.Web.GraphTeamsNotificationConsumer instead")]
         Task<IActionResult> RunListenerFunction(string functionNameHttpRequest, HttpRequest req);
+        [Obsolete("Use Proge.Teams.Edu.Web.TeamsMeetingEnricher instead")]
         Task<IActionResult> RunTeamsMeeting(HttpRequest req);
+        [Obsolete("Use Proge.Teams.Edu.Web.GraphApiSubscriptionRenewer instead")]
         Task RunTimeTriggeredFunction(string functionName);
     }
 
+    [Obsolete]
     public class TeamsDashboardFunctionsService : ITeamsDashboardFunctionsService
     {
         private readonly IAzureADJwtBearerValidation _azureADJwtBearerValidation;
@@ -41,6 +42,7 @@ namespace Proge.Teams.Edu.Web
             _teamsEduDbContext = teamsEduDbContext;
         }
 
+        [Obsolete("Use Proge.Teams.Edu.Web.TeamsMeetingEnricher instead")]
         public async Task<IActionResult> RunTeamsMeeting(HttpRequest req)
         {
             try
@@ -88,6 +90,7 @@ namespace Proge.Teams.Edu.Web
             }
         }
 
+        [Obsolete("Use Proge.Teams.Edu.Web.GraphApiSubscriptionRenewer instead and add EnsureMigrationOfContext in Startup")]
         public async Task RunTimeTriggeredFunction(string functionName)
         {
             try
@@ -107,6 +110,7 @@ namespace Proge.Teams.Edu.Web
             }
         }
 
+        [Obsolete("Use Proge.Teams.Edu.Web.GraphTeamsNotificationConsumer instead")]
         public async Task<IActionResult> RunListenerFunction(string functionNameHttpRequest, HttpRequest req)
         {
             string validationToken = req.Query["validationToken"];

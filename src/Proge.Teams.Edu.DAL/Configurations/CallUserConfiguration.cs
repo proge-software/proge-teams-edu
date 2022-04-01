@@ -14,7 +14,6 @@ namespace Proge.Teams.Edu.DAL.Configurations
         public void Configure(EntityTypeBuilder<CallUser> builder)
         {
             builder.HasKey(e => new { e.Id, e.UserRole, e.CallRecordId } );
-
             builder.Property(a => a.UserRole)
                 .HasMaxLength(50);
 
