@@ -7,9 +7,9 @@ namespace Proge.Teams.Edu.Abstraction
     public class AuthenticationConfig
     {
         public int RetryDelay { get; set; }
-        
+
         //public string Instance { get; set; } = "https://login.microsoftonline.com/{0}";
-        public string Instance { get; set; } 
+        public string Instance { get; set; }
 
         /// <summary>
         /// The Tenant is:
@@ -31,7 +31,13 @@ namespace Proge.Teams.Edu.Abstraction
         {
             get
             {
-                return String.Format(CultureInfo.InvariantCulture, Instance, TenantId);
+                if (string.IsNullOrWhiteSpace(Instance)
+                    || string.IsNullOrWhiteSpace(TenantId))
+                    return string.Empty;
+
+                string authority = String.Format(
+                    CultureInfo.InvariantCulture, Instance, TenantId);
+                return authority;
             }
         }
 
@@ -69,7 +75,7 @@ namespace Proge.Teams.Edu.Abstraction
         /// User credentials
         /// </summary>
         public string Username { get; set; }
-        
+
         /// <summary>
         /// User credentials
         /// </summary>
@@ -87,11 +93,11 @@ namespace Proge.Teams.Edu.Abstraction
                 if (string.IsNullOrWhiteSpace(Password))
                     return securePwd;
 
-                foreach (char c in Password)    
-                    securePwd.AppendChar(c);    
+                foreach (char c in Password)
+                    securePwd.AppendChar(c);
                 return securePwd;
             }
         }
-       
+
     }
 }

@@ -1,20 +1,12 @@
 ﻿using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Configuration;
 using Proge.Teams.Edu.DAL.Configurations;
 using Proge.Teams.Edu.DAL.Entities;
-using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Text;
 
 namespace Proge.Teams.Edu.DAL
 {
     public class TeamsEduDbContext : DbContext
     {
-        public TeamsEduDbContext(DbContextOptions options) : base(options)
-        {
-
-        }        
+        public TeamsEduDbContext(DbContextOptions options) : base(options) { }        
 
         public DbSet<Team> Teams { get; set; }
         public DbSet<Member> Members { get; set; }
@@ -28,6 +20,9 @@ namespace Proge.Teams.Edu.DAL
         public DbSet<CallSession> CallSession { get; set; }
         public DbSet<CallSegment> CallSessionSegment { get; set; }
         public DbSet<TeamsMeeting> TeamsMeeting { get; set; }
+        public DbSet<ExamTeamsRequest> ExamTeamsRequest { get; set; }
+        public DbSet<OnlineEvent> OnlineEvents { get; set; }
+        public DbSet<Attendee> Attendees { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -45,12 +40,17 @@ namespace Proge.Teams.Edu.DAL
             modelBuilder.ApplyConfiguration(CallSessionConfiguration.Default);
             modelBuilder.ApplyConfiguration(CallSegmentConfiguration.Default);
             modelBuilder.ApplyConfiguration(TeamsMeetingConfiguration.Default);
+            modelBuilder.ApplyConfiguration(ExamTeamsRequestConfiguration.Default);
+            modelBuilder.ApplyConfiguration(OnlineEventAttendeeConfiguration.Default);
+            modelBuilder.ApplyConfiguration(AttendeeConfiguration.Default);
+            modelBuilder.ApplyConfiguration(OnlineEventConfiguration<OnlineEvent>.Default);
         }
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
 #if DEBUG
             optionsBuilder.EnableSensitiveDataLogging();
+            optionsBuilder.EnableDetailedErrors();
 #endif
             //if (!optionsBuilder.IsConfigured)
             //{

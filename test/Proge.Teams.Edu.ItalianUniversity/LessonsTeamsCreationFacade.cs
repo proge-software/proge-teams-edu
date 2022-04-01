@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 
 
@@ -16,18 +17,15 @@ namespace Proge.Teams.Edu.ItalianUniversity
             _job = lessonTeamsCreationJob;
         }
 
-        public Task Configure()
-        {
-            throw new NotImplementedException();
-        }
 
-        public async Task StartJob()
+        public async Task StartJob(CancellationToken cancellationToken = default)
         {
             var readParameters = await _job.Read();
 
             //await _job.Validate();
             await _job.Write(readParameters);
             //await _job.GetFeedback();
+            throw new NotImplementedException();
         }
     }
 }

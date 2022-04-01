@@ -9,7 +9,6 @@ using Proge.Teams.Edu.Abstraction;
 using Proge.Teams.Edu.DAL;
 using Proge.Teams.Edu.DAL.Repositories;
 using Proge.Teams.Edu.GraphApi;
-using Proge.Teams.Edu.TeamsDashaborad;
 using Proge.Teams.Edu.TeamsDashboard;
 using Proge.Teams.Edu.Web;
 using Serilog;

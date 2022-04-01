@@ -6,6 +6,8 @@ using Microsoft.EntityFrameworkCore.Metadata;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Proge.Teams.Edu.DAL;
 
+#nullable disable
+
 namespace Proge.Teams.Edu.DAL.Migrations
 {
     [DbContext(typeof(TeamsEduDbContext))]
@@ -15,9 +17,10 @@ namespace Proge.Teams.Edu.DAL.Migrations
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "3.1.13")
-                .HasAnnotation("Relational:MaxIdentifierLength", 128)
-                .HasAnnotation("SqlServer:ValueGenerationStrategy", SqlServerValueGenerationStrategy.IdentityColumn);
+                .HasAnnotation("ProductVersion", "6.0.0-rc.2.21480.5")
+                .HasAnnotation("Relational:MaxIdentifierLength", 128);
+
+            SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder, 1L, 1);
 
             modelBuilder.Entity("Proge.Teams.Edu.DAL.Entities.CallRecord", b =>
                 {
@@ -26,8 +29,8 @@ namespace Proge.Teams.Edu.DAL.Migrations
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<string>("CallDescription")
-                        .HasColumnType("nvarchar(450)")
-                        .HasMaxLength(450);
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
 
                     b.Property<DateTimeOffset?>("EndDateTime")
                         .HasColumnType("datetimeoffset");
@@ -36,15 +39,15 @@ namespace Proge.Teams.Edu.DAL.Migrations
                         .HasColumnType("nvarchar(450)");
 
                     b.Property<string>("Modalities")
-                        .HasColumnType("nvarchar(200)")
-                        .HasMaxLength(200);
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
 
                     b.Property<DateTimeOffset?>("StartDateTime")
                         .HasColumnType("datetimeoffset");
 
                     b.Property<string>("Type")
-                        .HasColumnType("nvarchar(50)")
-                        .HasMaxLength(50);
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
 
                     b.HasKey("Id");
 
@@ -71,8 +74,8 @@ namespace Proge.Teams.Edu.DAL.Migrations
 
                     b.Property<string>("CallUserRole")
                         .IsRequired()
-                        .HasColumnType("nvarchar(50)")
-                        .HasMaxLength(50);
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
 
                     b.Property<DateTimeOffset?>("EndDateTime")
                         .HasColumnType("datetimeoffset");
@@ -81,12 +84,12 @@ namespace Proge.Teams.Edu.DAL.Migrations
                         .HasColumnType("datetimeoffset");
 
                     b.Property<string>("UserPlatform")
-                        .HasColumnType("nvarchar(100)")
-                        .HasMaxLength(100);
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
 
                     b.Property<string>("UserProductFamily")
-                        .HasColumnType("nvarchar(100)")
-                        .HasMaxLength(100);
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
 
                     b.HasKey("Id");
 
@@ -111,8 +114,8 @@ namespace Proge.Teams.Edu.DAL.Migrations
 
                     b.Property<string>("CallUserRole")
                         .IsRequired()
-                        .HasColumnType("nvarchar(50)")
-                        .HasMaxLength(50);
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
 
                     b.Property<DateTimeOffset?>("EndDateTime")
                         .HasColumnType("datetimeoffset");
@@ -121,16 +124,18 @@ namespace Proge.Teams.Edu.DAL.Migrations
                         .HasColumnType("datetimeoffset");
 
                     b.Property<string>("UserPlatform")
-                        .HasColumnType("nvarchar(100)")
-                        .HasMaxLength(100);
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
 
                     b.Property<string>("UserProductFamily")
-                        .HasColumnType("nvarchar(100)")
-                        .HasMaxLength(100);
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
 
                     b.HasKey("Id");
 
                     b.HasIndex("CallRecordId");
+
+                    b.HasIndex("CallUserId");
 
                     b.HasIndex("Id");
 
@@ -143,15 +148,15 @@ namespace Proge.Teams.Edu.DAL.Migrations
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<string>("UserRole")
-                        .HasColumnType("nvarchar(50)")
-                        .HasMaxLength(50);
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
 
                     b.Property<Guid>("CallRecordId")
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<string>("DisplayName")
-                        .HasColumnType("nvarchar(400)")
-                        .HasMaxLength(400);
+                        .HasMaxLength(400)
+                        .HasColumnType("nvarchar(400)");
 
                     b.Property<Guid?>("UserTenantId")
                         .HasColumnType("uniqueidentifier");
@@ -182,16 +187,16 @@ namespace Proge.Teams.Edu.DAL.Migrations
                         .HasColumnType("datetime2");
 
                     b.Property<string>("ODataType")
-                        .HasColumnType("nvarchar(400)")
-                        .HasMaxLength(400);
+                        .HasMaxLength(400)
+                        .HasColumnType("nvarchar(400)");
 
                     b.Property<string>("RawJson")
-                        .HasColumnType("nvarchar(max)")
-                        .HasMaxLength(2147483647);
+                        .HasMaxLength(2147483647)
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("Resource")
-                        .HasColumnType("nvarchar(400)")
-                        .HasMaxLength(400);
+                        .HasMaxLength(400)
+                        .HasColumnType("nvarchar(400)");
 
                     b.Property<DateTimeOffset?>("SubscriptionExpirationDateTime")
                         .HasColumnType("datetimeoffset(7)");
@@ -209,34 +214,164 @@ namespace Proge.Teams.Edu.DAL.Migrations
                     b.ToTable("ChangeNotification");
                 });
 
+            modelBuilder.Entity("Proge.Teams.Edu.DAL.Entities.ExamTeamsRequest", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("AdditionalDataString")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<long?>("App_appelloId")
+                        .HasColumnType("bigint");
+
+                    b.Property<string>("App_cdsCod")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<string>("App_cdsDes")
+                        .HasMaxLength(400)
+                        .HasColumnType("nvarchar(400)");
+
+                    b.Property<long?>("App_cdsId")
+                        .HasColumnType("bigint");
+
+                    b.Property<DateTime?>("App_dataFineIscr")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("App_dataInizioApp")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("App_dataInizioIscr")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("ArchivedDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("DipCod")
+                        .HasMaxLength(150)
+                        .HasColumnType("nvarchar(150)");
+
+                    b.Property<string>("ExternalId")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<string>("Ins_aa_offerta")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<string>("Ins_aa_ord")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<string>("Ins_ad_cod")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<string>("Ins_cds_cod")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<string>("Ins_pds_cod")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<string>("InternalId")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<bool>("IsArchived")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsMembershipLimitedToOwners")
+                        .HasColumnType("bit");
+
+                    b.Property<bool?>("MailSent")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("Members")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Owners")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<bool>("TeamCreated")
+                        .HasColumnType("bit");
+
+                    b.Property<DateTime?>("TeamCreationDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("TeamId")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<string>("TeamJoinUrl")
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<DateTime?>("TeamRequestDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("TeamRequestUser")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<bool>("TeamRequested")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("Title")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("ExamTeamsRequest");
+                });
+
+            modelBuilder.Entity("Proge.Teams.Edu.DAL.Entities.LatestLog", b =>
+                {
+                    b.Property<string>("Exception")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Level")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Message")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTimeOffset>("TimeStamp")
+                        .HasColumnType("datetimeoffset");
+
+                    b.ToView("LatestLog");
+                });
+
             modelBuilder.Entity("Proge.Teams.Edu.DAL.Entities.Log", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("int")
-                        .HasAnnotation("SqlServer:IdentityIncrement", 1)
-                        .HasAnnotation("SqlServer:IdentitySeed", 1)
-                        .HasAnnotation("SqlServer:ValueGenerationStrategy", SqlServerValueGenerationStrategy.IdentityColumn);
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"), 1L, 1);
 
                     b.Property<string>("Exception")
-                        .HasColumnType("nvarchar(max)")
-                        .HasMaxLength(2147483647);
+                        .HasMaxLength(2147483647)
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("Level")
-                        .HasColumnType("nvarchar(128)")
-                        .HasMaxLength(128);
+                        .HasMaxLength(128)
+                        .HasColumnType("nvarchar(128)");
 
                     b.Property<string>("LogEvent")
-                        .HasColumnType("nvarchar(max)")
-                        .HasMaxLength(2147483647);
+                        .HasMaxLength(2147483647)
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("Message")
-                        .HasColumnType("nvarchar(max)")
-                        .HasMaxLength(2147483647);
+                        .HasMaxLength(2147483647)
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("MessageTemplate")
-                        .HasColumnType("nvarchar(max)")
-                        .HasMaxLength(2147483647);
+                        .HasMaxLength(2147483647)
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("Properties")
                         .HasColumnType("xml");
@@ -244,8 +379,9 @@ namespace Proge.Teams.Edu.DAL.Migrations
                     b.Property<DateTimeOffset>("TimeStamp")
                         .HasColumnType("datetimeoffset(7)");
 
-                    b.HasKey("Id")
-                        .HasAnnotation("SqlServer:Clustered", true);
+                    b.HasKey("Id");
+
+                    SqlServerKeyBuilderExtensions.IsClustered(b.HasKey("Id"));
 
                     b.HasIndex("Level");
 
@@ -264,27 +400,27 @@ namespace Proge.Teams.Edu.DAL.Migrations
                         .HasColumnType("datetime2");
 
                     b.Property<string>("DisplayName")
-                        .HasColumnType("nvarchar(400)")
-                        .HasMaxLength(400);
+                        .HasMaxLength(400)
+                        .HasColumnType("nvarchar(400)");
 
                     b.Property<string>("JobTitle")
-                        .HasColumnType("nvarchar(300)")
-                        .HasMaxLength(300);
+                        .HasMaxLength(300)
+                        .HasColumnType("nvarchar(300)");
 
                     b.Property<string>("Mail")
-                        .HasColumnType("nvarchar(300)")
-                        .HasMaxLength(300);
+                        .HasMaxLength(300)
+                        .HasColumnType("nvarchar(300)");
 
                     b.Property<string>("OfficeLocation")
-                        .HasColumnType("nvarchar(300)")
-                        .HasMaxLength(300);
+                        .HasMaxLength(300)
+                        .HasColumnType("nvarchar(300)");
 
                     b.Property<Guid?>("TenantId")
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<string>("UserPrincipalName")
-                        .HasColumnType("nvarchar(200)")
-                        .HasMaxLength(200);
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
 
                     b.HasKey("MemberId");
 
@@ -297,8 +433,35 @@ namespace Proge.Teams.Edu.DAL.Migrations
                 {
                     b.Property<Guid>("TeamsId")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier")
-                        .HasMaxLength(30);
+                        .HasMaxLength(30)
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("AdCod")
+                        .HasMaxLength(10)
+                        .HasColumnType("nvarchar(10)");
+
+                    b.Property<string>("AdDesc")
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("AdId")
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<string>("AdditionalDataString")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("AnnoOfferta")
+                        .HasMaxLength(10)
+                        .HasColumnType("nvarchar(10)");
+
+                    b.Property<string>("AnnoOrdinamento")
+                        .HasMaxLength(5)
+                        .HasColumnType("nvarchar(5)");
+
+                    b.Property<string>("CdsCod")
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
 
                     b.Property<DateTime?>("CreatedOn")
                         .HasColumnType("datetime2");
@@ -306,36 +469,43 @@ namespace Proge.Teams.Edu.DAL.Migrations
                     b.Property<DateTime?>("DeletedOn")
                         .HasColumnType("datetime2");
 
+                    b.Property<string>("DepartmentId")
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
                     b.Property<string>("Description")
-                        .HasColumnType("nvarchar(1000)")
-                        .HasMaxLength(1000);
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
 
                     b.Property<string>("ExternalId")
-                        .HasColumnType("nvarchar(100)")
-                        .HasMaxLength(100);
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
 
                     b.Property<string>("InternalId")
-                        .HasColumnType("nvarchar(100)")
-                        .HasMaxLength(100);
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<bool>("IsArchived")
+                        .HasColumnType("bit");
 
                     b.Property<bool>("IsMembershipLimitedToOwners")
                         .HasColumnType("bit");
 
                     b.Property<string>("JoinCode")
-                        .HasColumnType("nvarchar(30)")
-                        .HasMaxLength(30);
+                        .HasMaxLength(30)
+                        .HasColumnType("nvarchar(30)");
 
                     b.Property<string>("JoinUrl")
-                        .HasColumnType("nvarchar(200)")
-                        .HasMaxLength(200);
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
 
                     b.Property<string>("Name")
-                        .HasColumnType("nvarchar(1000)")
-                        .HasMaxLength(1000);
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
 
                     b.Property<string>("TeamType")
-                        .HasColumnType("nvarchar(200)")
-                        .HasMaxLength(200);
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
 
                     b.Property<Guid?>("TenantId")
                         .HasColumnType("uniqueidentifier");
@@ -374,19 +544,19 @@ namespace Proge.Teams.Edu.DAL.Migrations
             modelBuilder.Entity("Proge.Teams.Edu.DAL.Entities.TeamsMeeting", b =>
                 {
                     b.Property<string>("JoinUrl")
-                        .HasColumnType("nvarchar(450)")
-                        .HasMaxLength(450);
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
 
                     b.Property<string>("Attendees")
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("ChatMessageId")
-                        .HasColumnType("nvarchar(255)")
-                        .HasMaxLength(255);
+                        .HasMaxLength(255)
+                        .HasColumnType("nvarchar(255)");
 
                     b.Property<string>("ChatThreadId")
-                        .HasColumnType("nvarchar(255)")
-                        .HasMaxLength(255);
+                        .HasMaxLength(255)
+                        .HasColumnType("nvarchar(255)");
 
                     b.Property<DateTime?>("CreationDateTime")
                         .HasColumnType("datetime2");
@@ -395,50 +565,91 @@ namespace Proge.Teams.Edu.DAL.Migrations
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("MeetingExtendedAttribute")
-                        .HasColumnType("nvarchar(10)")
-                        .HasMaxLength(10);
+                        .HasMaxLength(10)
+                        .HasColumnType("nvarchar(10)");
 
                     b.Property<string>("MeetingExtendedName")
-                        .HasColumnType("nvarchar(255)")
-                        .HasMaxLength(255);
+                        .HasMaxLength(255)
+                        .HasColumnType("nvarchar(255)");
 
                     b.Property<string>("MeetingHierarchy")
-                        .HasColumnType("nvarchar(10)")
-                        .HasMaxLength(10);
+                        .HasMaxLength(10)
+                        .HasColumnType("nvarchar(10)");
 
                     b.Property<string>("MeetingId")
-                        .HasColumnType("nvarchar(150)")
-                        .HasMaxLength(150);
+                        .HasMaxLength(150)
+                        .HasColumnType("nvarchar(150)");
 
                     b.Property<string>("MeetingIdPrimary")
-                        .HasColumnType("nvarchar(20)")
-                        .HasMaxLength(20);
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
 
                     b.Property<string>("MeetingIdSecondary")
-                        .HasColumnType("nvarchar(20)")
-                        .HasMaxLength(20);
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
 
                     b.Property<string>("MeetingName")
-                        .HasColumnType("nvarchar(450)")
-                        .HasMaxLength(450);
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
 
                     b.Property<string>("MeetingType")
-                        .HasColumnType("nvarchar(255)")
-                        .HasMaxLength(255);
+                        .HasMaxLength(255)
+                        .HasColumnType("nvarchar(255)");
 
                     b.Property<string>("OwnerExtended")
-                        .HasColumnType("nvarchar(255)")
-                        .HasMaxLength(255);
+                        .HasMaxLength(255)
+                        .HasColumnType("nvarchar(255)");
 
                     b.Property<string>("OwnerUpn")
-                        .HasColumnType("nvarchar(255)")
-                        .HasMaxLength(255);
+                        .HasMaxLength(255)
+                        .HasColumnType("nvarchar(255)");
 
                     b.HasKey("JoinUrl");
 
                     b.HasIndex("MeetingId");
 
                     b.ToTable("TeamsMeeting");
+                });
+
+            modelBuilder.Entity("Proge.Teams.Edu.DAL.Entities.TeamWithMemeber", b =>
+                {
+                    b.Property<string>("Description")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("ExternalId")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("InternalId")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<bool>("IsMembershipLimitedToOwners")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("JoinCode")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("JoinUrl")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<Guid>("MemberId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("MemberType")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Name")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("TeamType")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<Guid>("TeamsId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("UserPrincipalName")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.ToView("TeamsWithMemeber");
                 });
 
             modelBuilder.Entity("Proge.Teams.Edu.DAL.Entities.CallSegment", b =>
@@ -448,6 +659,8 @@ namespace Proge.Teams.Edu.DAL.Migrations
                         .HasForeignKey("CallSessionId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
+
+                    b.Navigation("CallSession");
                 });
 
             modelBuilder.Entity("Proge.Teams.Edu.DAL.Entities.CallSession", b =>
@@ -457,6 +670,8 @@ namespace Proge.Teams.Edu.DAL.Migrations
                         .HasForeignKey("CallRecordId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
+
+                    b.Navigation("CallRecord");
                 });
 
             modelBuilder.Entity("Proge.Teams.Edu.DAL.Entities.CallUser", b =>
@@ -466,6 +681,8 @@ namespace Proge.Teams.Edu.DAL.Migrations
                         .HasForeignKey("CallRecordId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
+
+                    b.Navigation("CallRecord");
                 });
 
             modelBuilder.Entity("Proge.Teams.Edu.DAL.Entities.TeamMember", b =>
@@ -481,6 +698,32 @@ namespace Proge.Teams.Edu.DAL.Migrations
                         .HasForeignKey("TeamId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
+
+                    b.Navigation("Member");
+
+                    b.Navigation("Team");
+                });
+
+            modelBuilder.Entity("Proge.Teams.Edu.DAL.Entities.CallRecord", b =>
+                {
+                    b.Navigation("CallSessions");
+
+                    b.Navigation("CallUsers");
+                });
+
+            modelBuilder.Entity("Proge.Teams.Edu.DAL.Entities.CallSession", b =>
+                {
+                    b.Navigation("CallSegments");
+                });
+
+            modelBuilder.Entity("Proge.Teams.Edu.DAL.Entities.Member", b =>
+                {
+                    b.Navigation("TeamsUsers");
+                });
+
+            modelBuilder.Entity("Proge.Teams.Edu.DAL.Entities.Team", b =>
+                {
+                    b.Navigation("TeamsUsers");
                 });
 #pragma warning restore 612, 618
         }

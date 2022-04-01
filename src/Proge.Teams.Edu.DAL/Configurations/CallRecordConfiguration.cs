@@ -13,8 +13,7 @@ namespace Proge.Teams.Edu.DAL.Configurations
 
         public void Configure(EntityTypeBuilder<CallRecord> builder)
         {
-            builder.HasKey(e => new { e.Id });                   
-
+            builder.HasKey(e => new { e.Id });
 
             builder.Property(a => a.Type)
                 .HasMaxLength(50);

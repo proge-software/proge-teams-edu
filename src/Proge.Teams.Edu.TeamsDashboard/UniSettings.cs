@@ -1,4 +1,4 @@
-﻿namespace Proge.Teams.Edu.TeamsDashaborad
+﻿namespace Proge.Teams.Edu.TeamsDashboard
 {
     public class UniSettings
     {
@@ -10,12 +10,15 @@
         public string AppClientId { get; set; }
         public string AppAudience { get; set; }
         public string AppTenant { get; set; }
+        public string StorageEventContainer { get; set; }
+        public string EventHubName { get; set; }
+        public bool SaveOnlineMeetingDetails { get; set; } = false;
     }
 
     public class CallFilters
-    {       
+    {
         public string CallType { get; set; }
-        public int? MinDuration { get; set; }      
+        public int? MinDuration { get; set; }
         public bool NameNeededInTeamsMeetingTable { get; set; }
     }
 }

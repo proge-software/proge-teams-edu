@@ -1,20 +1,19 @@
-﻿using EFCore.BulkExtensions;
-using Microsoft.EntityFrameworkCore;
-using Proge.Teams.Edu.DAL.Entities;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using EFCore.BulkExtensions;
+using Microsoft.EntityFrameworkCore;
+using Proge.Teams.Edu.DAL.Entities;
 
 namespace Proge.Teams.Edu.DAL.Repositories
 {
     public interface IRepository
     {
         TEntity Create<TEntity>(TEntity entity) where TEntity : class;
-        Task<TEntity> CreateAsync<TEntity>(TEntity entity) where TEntity : class;
+        Task<TEntity> CreateAsync<TEntity>(TEntity entity, CancellationToken cancellationToken = default) where TEntity : class;
         void Delete<TEntity>(object id) where TEntity : class;
         void Delete<TEntity>(TEntity entity) where TEntity : class;
         void DeleteAll<TEntity>(IEnumerable<TEntity> list) where TEntity : class;
@@ -38,8 +37,9 @@ namespace Proge.Teams.Edu.DAL.Repositories
         void Update<TEntity>(TEntity entity) where TEntity : class;
         void Detach<TEntity>(TEntity entity) where TEntity : class;
 
-        Task BulkInsertOrUpdateAsync<TEntity>(IList<TEntity> list) where TEntity : class;
-        Task BulkDeleteAsync<TEntity>(IList<TEntity> list) where TEntity : class;
+        Task BulkInsertOrUpdateAsync<TEntity>(IList<TEntity> list, CancellationToken cancellationToken = default) where TEntity : class;
+        Task BulkInsertOrUpdateAsync<TEntity>(IList<TEntity> list, Action<BulkConfig> bulkAction, CancellationToken cancellationToken = default) where TEntity : class;
+        Task BulkDeleteAsync<TEntity>(IList<TEntity> list, CancellationToken cancellationToken = default) where TEntity : class;
         void BulkDelete<TEntity>(IList<TEntity> list) where TEntity : class;
 
         IQueryable<T> _defaultCollection<T>() where T : BaseEntity;
@@ -171,14 +171,19 @@ namespace Proge.Teams.Edu.DAL.Repositories
             return _dbContext.Set<TEntity>().Add(entity).Entity;
         }
 
-        public virtual async Task<TEntity> CreateAsync<TEntity>(TEntity entity) where TEntity : class
+        public virtual async Task<TEntity> CreateAsync<TEntity>(TEntity entity, CancellationToken cancellationToken = default) where TEntity : class
         {
-            return (await _dbContext.Set<TEntity>().AddAsync(entity)).Entity;
+            return (await _dbContext.Set<TEntity>().AddAsync(entity, cancellationToken)).Entity;
         }
 
-        public virtual async Task BulkInsertOrUpdateAsync<TEntity>(IList<TEntity> list) where TEntity : class
+        public virtual async Task BulkInsertOrUpdateAsync<TEntity>(IList<TEntity> list, CancellationToken cancellationToken = default) where TEntity : class
         {
-            await _dbContext.BulkInsertOrUpdateAsync<TEntity>(list);
+            await _dbContext.BulkInsertOrUpdateAsync<TEntity>(list, cancellationToken: cancellationToken);
+        }
+
+        public virtual async Task BulkInsertOrUpdateAsync<TEntity>(IList<TEntity> list, Action<BulkConfig> bulkAction, CancellationToken cancellationToken = default) where TEntity : class
+        {
+            await _dbContext.BulkInsertOrUpdateAsync<TEntity>(list, bulkAction, cancellationToken: cancellationToken);
         }
 
         /// <summary>
@@ -187,14 +192,9 @@ namespace Proge.Teams.Edu.DAL.Repositories
         /// <typeparam name="TEntity"></typeparam>
         /// <param name="list"></param>
         /// <returns></returns>
-        public virtual async Task BulkDeleteAsync<TEntity>(IList<TEntity> list) where TEntity : class
+        public virtual async Task BulkDeleteAsync<TEntity>(IList<TEntity> list, CancellationToken cancellationToken = default) where TEntity : class
         {
-            await _dbContext.BulkDeleteAsync<TEntity>(list);
-            //CancellationTokenSource tcs = new CancellationTokenSource();
-            //CancellationToken token = tcs.Token;
-            //BulkConfig bulkCfg = null;
-            //await _dbContext.BulkDeleteAsync<TEntity>(list, bulkCfg, null, token);
-            //tcs.Cancel();
+            await _dbContext.BulkDeleteAsync<TEntity>(list, cancellationToken: cancellationToken);
         }
 
         /// <summary>

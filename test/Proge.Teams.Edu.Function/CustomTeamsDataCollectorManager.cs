@@ -4,11 +4,11 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Proge.Teams.Edu.Abstraction;
 using Proge.Teams.Edu.DAL.Repositories;
-using Proge.Teams.Edu.TeamsDashaborad;
 using System;
 using System.Collections.Generic;
 using System.Text;
 using Beta = BetaLib.Microsoft.Graph;
+using Proge.Teams.Edu.TeamsDashboard;
 
 namespace Proge.Teams.Edu.Function
 {
@@ -32,16 +32,13 @@ namespace Proge.Teams.Edu.Function
     {
         public CustomTeamsDataCollectorManager(IOptions<CustomUniSettings> uniCfg,
             IOptions<CustomCallFilters> callFilter,
-            IBetaGraphApiManager betaGraphApi,
+            IGraphApiManager betaGraphApi,
             ILogger<CustomTeamsDataCollectorManager> logger,
             ICallRecordRepository ichangenotrep,
-            ITeamsMeetingRepository teamsMeetingRepository) 
+            ITeamsMeetingRepository teamsMeetingRepository)
         : base(uniCfg, callFilter, betaGraphApi, logger, ichangenotrep, teamsMeetingRepository)
         { }
 
-        protected async override Task<bool> CallToSave(Beta.CallRecords.CallRecord receivedCallRecord)
-        {
-            return await base.CallToSave(receivedCallRecord);
-        }
+
     }
 }

@@ -1,9 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using Proge.Teams.Edu.DAL.Entities;
-using System;
-using System.Collections.Generic;
-using System.Text;
 
 namespace Proge.Teams.Edu.DAL.Configurations
 {
@@ -17,20 +14,20 @@ namespace Proge.Teams.Edu.DAL.Configurations
 
             builder.Property(a => a.InternalId)
                 .HasMaxLength(100);
-            
+
             builder.Property(a => a.ExternalId)
-                .HasMaxLength(100); 
+                .HasMaxLength(100);
             builder.Property(a => a.JoinCode)
-                .HasMaxLength(30); 
+                .HasMaxLength(30);
 
             builder.Property(a => a.JoinUrl)
-                .HasMaxLength(200);
+                .HasMaxLength(450);
 
             builder.Property(a => a.TeamType)
                 .HasMaxLength(200);
 
             builder.Property(a => a.TeamsId)
-                .HasMaxLength(30);            
+                .HasMaxLength(30);
 
             builder.Property(a => a.Name)
                 .HasMaxLength(1000);
@@ -38,6 +35,28 @@ namespace Proge.Teams.Edu.DAL.Configurations
             builder.Property(a => a.Description)
                 .HasMaxLength(1000);
 
+            builder.Property(a => a.DepartmentId)
+                .HasMaxLength(20);
+
+            builder.Property(a => a.AdId)
+                .HasMaxLength(20);
+
+            builder.Property(a => a.AnnoOfferta)
+                .HasMaxLength(10);
+
+            builder.Property(a => a.AdCod)
+                .HasMaxLength(10);
+
+            builder.Property(a => a.AdDesc)
+                .HasMaxLength(450);
+
+            builder.Property(a => a.AnnoOrdinamento)
+                .HasMaxLength(5);
+
+            builder.Property(a => a.CdsCod)
+                .HasMaxLength(450);
+            builder
+              .Property(a => a.AdditionalDataString);
             builder.HasIndex(a => a.ExternalId);
             builder.HasIndex(a => a.TeamsId);
             builder.HasIndex(a => a.ExternalId);

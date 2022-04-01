@@ -1,56 +1,55 @@
 ﻿extern alias BetaLib;
-using System.Threading;
-using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
-using Newtonsoft.Json;
-using Proge.Teams.Edu.Abstraction;
-using Proge.Teams.Edu.DAL.Entities;
-using Proge.Teams.Edu.DAL.Repositories;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
 using System.Text.Json;
+using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
+using Newtonsoft.Json;
+using Proge.Teams.Edu.Abstraction;
+using Proge.Teams.Edu.DAL.Repositories;
 using Beta = BetaLib.Microsoft.Graph;
 using DalCallRecord = Proge.Teams.Edu.DAL.Entities.CallRecord;
 
-
-namespace Proge.Teams.Edu.TeamsDashaborad
+namespace Proge.Teams.Edu.TeamsDashboard
 {
     public interface ITeamsDataCollectorManager
     {
         Task SubscribeCallRecords();
-        Task ProcessNotification(Stream body);
+        Task<bool> ProcessNotification(Stream body);
         Task<(bool IsSuccess, string RetMessage)> WriteTeamsMeetingTable(Stream body, string senderCheckKey);
+        [Obsolete("Use ProcessNotification")]
         Task<(bool IsSuccess, string RetMessage)> ProcessChangeNotification();
     }
 
     public class TeamsDataCollectorManager : ITeamsDataCollectorManager
     {
-        protected readonly IBetaGraphApiManager _betaGraphApiManager;
+        protected readonly IGraphApiManager _graphApiManager;
         protected readonly ILogger<TeamsDataCollectorManager> _logger;
         protected readonly UniSettings _uniSettings;
         protected readonly CallFilters callFilters;
         protected readonly ICallRecordRepository _callRecordRepo;
         protected readonly ITeamsMeetingRepository _teamsMeetingRepository;
 
-        public TeamsDataCollectorManager(IOptions<UniSettings> uniCfg,
+        public TeamsDataCollectorManager(
+            IOptions<UniSettings> uniCfg,
             IOptions<CallFilters> callFilter,
-            IBetaGraphApiManager betaGraphApi,
+            IGraphApiManager graphApi,
             ILogger<TeamsDataCollectorManager> logger,
             ICallRecordRepository ichangenotrep,
             ITeamsMeetingRepository teamsMeetingRepository)
         {
-            _betaGraphApiManager = betaGraphApi;
+            _graphApiManager = graphApi;
             _uniSettings = uniCfg.Value;
             _logger = logger;
             callFilters = callFilter.Value;
             _callRecordRepo = ichangenotrep;
             _teamsMeetingRepository = teamsMeetingRepository;
         }
-
 
         public virtual async Task<(bool IsSuccess, string RetMessage)> WriteTeamsMeetingTable(Stream body, string senderCheckKey)
         {
@@ -66,7 +65,7 @@ namespace Proge.Teams.Edu.TeamsDashaborad
                     {
                         var bodyStr = reader.ReadToEnd();
                         _logger.LogInformation(bodyStr);
-                        var receivedTeamsMeetings = JsonConvert.DeserializeObject<IEnumerable<TeamsMeeting>>(bodyStr);
+                        var receivedTeamsMeetings = JsonConvert.DeserializeObject<IEnumerable<DAL.Entities.TeamsMeeting>>(bodyStr);
 
                         foreach (var receivedTeamMeeting in receivedTeamsMeetings)
                         {
@@ -100,9 +99,9 @@ namespace Proge.Teams.Edu.TeamsDashaborad
                             }
                             else
                             {
-                                if (await _callRecordRepo.GetExistsAsync<TeamsMeeting>(m => m.JoinUrl == receivedTeamMeeting.JoinUrl))
+                                if (await _callRecordRepo.GetExistsAsync<DAL.Entities.TeamsMeeting>(m => m.JoinUrl == receivedTeamMeeting.JoinUrl))
                                 {
-                                    var teamMeetingOnDb = await _callRecordRepo.GetByIdAsync<TeamsMeeting, string>(receivedTeamMeeting.JoinUrl);
+                                    var teamMeetingOnDb = await _callRecordRepo.GetByIdAsync<DAL.Entities.TeamsMeeting, string>(receivedTeamMeeting.JoinUrl);
                                     teamMeetingOnDb = receivedTeamMeeting;
                                     _callRecordRepo.Update(teamMeetingOnDb);
                                     retMessage = "update";
@@ -138,70 +137,118 @@ namespace Proge.Teams.Edu.TeamsDashaborad
             }
         }
 
-        public virtual async Task ProcessNotification(Stream body)
+        private static async Task<string> ReadStream(Stream body)
         {
+            using StreamReader reader = new StreamReader(body, Encoding.UTF8, true, 1024, true);
+            return await reader.ReadToEndAsync();
+        }
+
+        public virtual async Task<bool> ProcessNotification(Stream body)
+        {
+            string bodyStr = await ReadStream(body);
             try
             {
-                //Beta.CallRecords.CallRecord callRecord;
-                using (StreamReader reader = new StreamReader(body, Encoding.UTF8, true, 1024, true))
+                var collection = System.Text.Json.JsonSerializer.Deserialize<Microsoft.Graph.ChangeNotificationCollection>(bodyStr);
+                if (!collection?.Value?.Any() ?? true)
                 {
-                    var bodyStr = reader.ReadToEnd();
-                    var collection = System.Text.Json.JsonSerializer.Deserialize<Beta.ChangeNotificationCollection>(bodyStr);
-                    
-                    // filter notification
-                    var filteredNotification = collection.Value.Where(x
-                        => x.EncryptedContent == null
-                            // Verify the current client state matches the one that was sent.
-                            && x.ClientState == _uniSettings.ClientStateSecret
-                            // Verify ODataId is set for given notification
-                            && x.ResourceData?.AdditionalData["id"] != null);
-
-                    // Parse the received notifications.
-                    var plainNotifications = new Dictionary<string, Beta.ChangeNotification>();
-                    foreach (var notification in filteredNotification)
-                    {
-                        // Just keep the latest notification for each resource. No point pulling data more than once.
-                        plainNotifications[notification.Resource] = notification;
-
-                        var changeNot = new DAL.Entities.ChangeNotification
-                        {
-                            Id = Guid.NewGuid(),
-                            RawJson = bodyStr,
-                            SubscriptionId = notification.SubscriptionId,
-                            SubscriptionExpirationDateTime = notification.SubscriptionExpirationDateTime,
-                            TenantId = notification.TenantId,
-                            ChangeType = notification.ChangeType,
-                            Resource = notification.Resource,
-                            ODataType = notification.ResourceData?.ODataType ?? notification.ODataType,
-                            ODataId = notification.ResourceData.AdditionalData["id"].ToString()
-                        };
-
-                        // Save CallRecord, if not to discard according to config filters
-                        Beta.CallRecords.CallRecord receivedCallRecord = await _betaGraphApiManager.GetCallRecord(changeNot.ODataId);
-                        if (!await CallToSave(receivedCallRecord))
-                            continue;
-
-                        // save call record
-                        var mappedCallRecord = await MapReceivedCallRecord(receivedCallRecord);
-
-                        await _callRecordRepo.CreateAsync(mappedCallRecord);
-                        await _callRecordRepo.InsertChangeNotification(changeNot);
-                        await _callRecordRepo.SaveAsync();
-
-                        // save online meeting details
-                        await CreateOrUpdateOnlineMeeting(receivedCallRecord.Organizer.User.Id, receivedCallRecord.JoinWebUrl);
-                    }
+                    _logger.LogInformation("Could not deserialize body into ChangeNotificationCollection: {0}", bodyStr);
+                    return false;
                 }
+
+                var count = collection.Value.Count();
+                _logger.LogDebug("Deserialized {0} Change Notification{1}", count, count > 1 ? "s" : string.Empty);
+
+                // filter notification
+                var filteredNotifications = collection.Value.Where(x
+                    => x.EncryptedContent == null
+                        && x.ClientState == _uniSettings.ClientStateSecret
+                        && x.ResourceData?.AdditionalData != null && x.ResourceData.AdditionalData.ContainsKey("id")
+                        );
+
+                var fc = filteredNotifications?.Count();
+                _logger.LogInformation("Filtered Change Notification{0} {1}/{2}", fc > 1 ? "s" : string.Empty, fc, count);
+
+                foreach (Microsoft.Graph.ChangeNotification notification in filteredNotifications)
+                {
+                    await ProcessSingleNotification(bodyStr, notification);
+                }
+
+                return true;
             }
-            catch (Exception ex)
+            catch (Exception e)
             {
-                _logger.LogError($"ProcessNotification: { ex.Message }");
+                _logger.LogError(e, "Error processing notification: {0}", bodyStr);
+                throw;
             }
         }
 
-        private async Task CreateOrUpdateOnlineMeeting(string organizerId, string joinWebUrl, CancellationToken cancellationToken = default)
+        private async Task ProcessSingleNotification(string bodyStr, Microsoft.Graph.ChangeNotification notification)
         {
-            Beta.OnlineMeeting onlineMeeting = await _betaGraphApiManager.GetOnlineMeeting(organizerId, joinWebUrl);
+            DAL.Entities.ChangeNotification changeNotification = new DAL.Entities.ChangeNotification
+            {
+                Id = Guid.NewGuid(),
+                RawJson = bodyStr,
+                SubscriptionId = notification.SubscriptionId,
+                SubscriptionExpirationDateTime = notification.SubscriptionExpirationDateTime,
+                TenantId = notification.TenantId,
+                ChangeType = notification.ChangeType,
+                Resource = notification.Resource,
+                ODataType = notification.ResourceData.ODataType ?? notification.ODataType,
+                ODataId = notification.ResourceData.AdditionalData["id"].ToString()
+            };
+
+            if (string.IsNullOrWhiteSpace(changeNotification.ODataId))
+            {
+                _logger.LogInformation("Change Notification without ODataId");
+                return;
+            }
+
+            // Save CallRecord, if not to discard according to config filters
+            Microsoft.Graph.CallRecords.CallRecord receivedCallRecord = await _graphApiManager.GetCallRecord(changeNotification.ODataId);
+            if (receivedCallRecord == null || !await CallToSave(receivedCallRecord))
+            {
+                _logger.LogInformation("Call must not be saved: {0}", changeNotification.ODataId);
+                return;
+            }
+
+            await PersistOnDatabase(receivedCallRecord, changeNotification);
+            await SaveOnlineMeetingIfNeeded(receivedCallRecord);
+        }
+
+        private async Task PersistOnDatabase(Microsoft.Graph.CallRecords.CallRecord receivedCallRecord, DAL.Entities.ChangeNotification changeNotification)
+        {
+            // save call record
+            DalCallRecord mappedCallRecord = await MapReceivedCallRecord(receivedCallRecord);
+            await _callRecordRepo.CreateOrUpdate(mappedCallRecord, changeNotification);
+        }
+
+        private async Task SaveOnlineMeetingIfNeeded(Microsoft.Graph.CallRecords.CallRecord callRecord, CancellationToken cancellationToken = default)
+        {
+            if (!_uniSettings.SaveOnlineMeetingDetails)
+                return;
+
+            if (callRecord?.Organizer?.User == null
+                || string.IsNullOrWhiteSpace(callRecord.Organizer.User.Id)
+                || string.IsNullOrWhiteSpace(callRecord.JoinWebUrl))
+            {
+                _logger.LogWarning("SaveOnlineMeetingIfNeeded skipped: callRecord.Organizer.User.Id or callRecord.JoinWebUrl null");
+                return;
+            }
+
+            try
+            {
+                await CreateOrUpdateOnlineMeeting(callRecord.Organizer.User.Id, callRecord.JoinWebUrl, cancellationToken);
+                _logger.LogInformation("Created/Updated Online Meeting {0}", callRecord.JoinWebUrl);
+            }
+            catch (Exception e)
+            {
+                _logger.LogError(e, "Error creating Online Meeting");
+            }
+        }
+
+        private async Task CreateOrUpdateOnlineMeeting(string organizerId, string joinWebUrl, CancellationToken cancellationToken)
+        {
+            Microsoft.Graph.OnlineMeeting onlineMeeting = await _graphApiManager.GetOnlineMeeting(organizerId, joinWebUrl);
             if (onlineMeeting == null)
             {
                 _logger.LogWarning(
@@ -212,7 +259,7 @@ namespace Proge.Teams.Edu.TeamsDashaborad
                 return;
             }
 
-            bool exists = await _teamsMeetingRepository.ExistByJoinUrl(joinWebUrl);
+            bool exists = await _teamsMeetingRepository.ExistByJoinUrl(joinWebUrl, cancellationToken);
             if (!exists)
             {
                 await CreateOnlineMeeting(onlineMeeting, cancellationToken);
@@ -221,23 +268,22 @@ namespace Proge.Teams.Edu.TeamsDashaborad
 
             await UpdateOnlineMeeting(onlineMeeting, cancellationToken);
         }
-        private async Task CreateOnlineMeeting(Beta.OnlineMeeting onlineMeeting, CancellationToken cancellationToken = default)
+        private async Task CreateOnlineMeeting(Microsoft.Graph.OnlineMeeting onlineMeeting, CancellationToken cancellationToken)
         {
             _logger.LogDebug("Creating Teams Meeting with id {0}", onlineMeeting.Id);
-            var meeting = new TeamsMeeting(onlineMeeting);
+            var meeting = new DAL.Entities.TeamsMeeting(onlineMeeting);
             await _teamsMeetingRepository.Create(meeting, cancellationToken);
         }
 
-        private async Task UpdateOnlineMeeting(Beta.OnlineMeeting onlineMeeting, CancellationToken cancellationToken = default)
+        private async Task UpdateOnlineMeeting(Microsoft.Graph.OnlineMeeting onlineMeeting, CancellationToken cancellationToken)
         {
             _logger.LogDebug("Updating Teams Meeting with id {0}", onlineMeeting.Id);
-            var meeting = new TeamsMeeting(onlineMeeting);
-            await _teamsMeetingRepository.UpdateMeeting(meeting);
+            var meeting = new DAL.Entities.TeamsMeeting(onlineMeeting);
+            await _teamsMeetingRepository.UpdateMeeting(meeting, cancellationToken);
         }
 
         public virtual async Task<(bool IsSuccess, string RetMessage)> ProcessChangeNotification()
         {
-
             int totCalls = 0;
             int totDistinctCalls = 0;
             int callsToSave = 0;
@@ -249,7 +295,7 @@ namespace Proge.Teams.Edu.TeamsDashaborad
 
             _logger.LogInformation("ProcessChangeNotification started.");
 
-            var changeNotificationCollection = await _callRecordRepo.GetAllAsync<ChangeNotification>();
+            var changeNotificationCollection = await _callRecordRepo.GetAllAsync<DAL.Entities.ChangeNotification>();
 
             var callIdCollection = changeNotificationCollection.Select(c => c.ODataId);
             totCalls = callIdCollection.Count();
@@ -258,17 +304,17 @@ namespace Proge.Teams.Edu.TeamsDashaborad
 
             _logger.LogInformation($"ProcessChangeNotification tot calls to process: {totCalls}.");
 
-            List<string> discardedByFiltersCallsODataIds = new List<string>();
-            List<DalCallRecord> mappedCallRecsToSave = new List<DalCallRecord>();
+            List<string> discardedByFiltersCallsODataIds = new();
+            List<DalCallRecord> mappedCallRecsToSave = new();
             foreach (var callId in callIdCollection)
             {
                 try
                 {
-                    Beta.CallRecords.CallRecord receivedCallRecord = await _betaGraphApiManager.GetCallRecord(callId);
+                    Microsoft.Graph.CallRecords.CallRecord receivedCallRecord = await _graphApiManager.GetCallRecord(callId);
 
                     if (receivedCallRecord != null)
                     {
-                        DalCallRecord mappedCallRecord = new DalCallRecord();
+                        DalCallRecord mappedCallRecord = new();
 
                         if (await CallToSave(receivedCallRecord))
                         {
@@ -280,15 +326,15 @@ namespace Proge.Teams.Edu.TeamsDashaborad
                             {
                                 try
                                 {
-                                    await _callRecordRepo.BulkWriteCallRecordAsync(mappedCallRecsToSave);
-                                    savedCalls += mappedCallRecsToSave.Count();
+                                    await _callRecordRepo.BulkWriteCallRecordsAsync(mappedCallRecsToSave);
+                                    savedCalls += mappedCallRecsToSave.Count;
                                     mappedCallRecsToSave.Clear();
 
-                                    Console.WriteLine($"mappedCalls (written in ChangeNotification db table): { mappedCalls }");
+                                    _logger.LogDebug("mappedCalls (written in ChangeNotification db table): {0}", mappedCalls);
                                 }
                                 catch (Exception ex)
                                 {
-                                    Console.WriteLine($"Error during BulkWriteCallRecordAsync: { ex.Message }");
+                                    _logger.LogError(ex, "Error during BulkWriteCallRecordAsync");
                                 }
                             }
                         }
@@ -298,7 +344,7 @@ namespace Proge.Teams.Edu.TeamsDashaborad
                             callsToDiscard++;
                             if (callsToDiscard % 100 == 0)
                             {
-                                Console.WriteLine($"callsToDiscard: { callsToDiscard }");
+                                _logger.LogDebug("callsToDiscard: {0}", callsToDiscard);
                             }
                         }
                     }
@@ -307,24 +353,23 @@ namespace Proge.Teams.Edu.TeamsDashaborad
                         nullFromGraphApiCalls++;
                         if (nullFromGraphApiCalls % 10 == 0)
                         {
-                            Console.WriteLine($"nullFromGraphApiCalls: { nullFromGraphApiCalls }");
+                            _logger.LogDebug("nullFromGraphApiCalls: {0}", nullFromGraphApiCalls);
                         }
                     }
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogError($"ProcessChangeNotification: { ex.Message }");
+                    _logger.LogError(ex, "ProcessChangeNotification");
                     bulkListsCreatingCallsInError++;
-                    Console.WriteLine($"ProcessChangeNotification: { ex.Message }");
                 }
             }
 
             // Delete discarded calls from ChangeNotification
             int deletedFromChangeNotification = 0;
-            IEnumerable<ChangeNotification> chnNotRowsToDelete = changeNotificationCollection.Where(n => discardedByFiltersCallsODataIds.Contains(n.ODataId));
+            IEnumerable<DAL.Entities.ChangeNotification> chnNotRowsToDelete = changeNotificationCollection.Where(n => discardedByFiltersCallsODataIds.Contains(n.ODataId));
             if (chnNotRowsToDelete != null && chnNotRowsToDelete.Any())
             {
-                List<ChangeNotification> chnNotRowsToDeleteList = chnNotRowsToDelete.ToList();
+                List<DAL.Entities.ChangeNotification> chnNotRowsToDeleteList = chnNotRowsToDelete.ToList();
 
                 // EFCore.BulkExtensions bulk delete methods: not working
                 //await _callRecordRepo.BulkDeleteChangeNotificationAsync(chnNotRowsToDeleteList);
@@ -335,8 +380,8 @@ namespace Proge.Teams.Edu.TeamsDashaborad
             }
 
             // Insert/Update saved callRecs
-            await _callRecordRepo.BulkWriteCallRecordAsync(mappedCallRecsToSave);
-            savedCalls += mappedCallRecsToSave.Count();
+            await _callRecordRepo.BulkWriteCallRecordsAsync(mappedCallRecsToSave);
+            savedCalls += mappedCallRecsToSave.Count;
 
 
             _logger.LogInformation("ProcessChangeNotification finished.");
@@ -345,11 +390,28 @@ namespace Proge.Teams.Edu.TeamsDashaborad
 
         public virtual async Task SubscribeCallRecords()
         {
-            bool renewedSubscription = await _betaGraphApiManager.GetSubscriptions();
-            if (!renewedSubscription)
+            var subscriptions = await _graphApiManager.GetSubscriptions();
+            var currentSubscription = subscriptions.FirstOrDefault(a =>
+                a.Resource == _uniSettings.Resource
+                && a.NotificationUrl == _uniSettings.NotificationUrl);
+
+
+            var diffNotification = currentSubscription?.ExpirationDateTime?.LocalDateTime.Subtract(DateTimeOffset.Now.LocalDateTime).Hours;
+            if (currentSubscription == null)
             {
-                var x = await _betaGraphApiManager.AddSubscription(_uniSettings.ChangeType, _uniSettings.Resource, new DateTimeOffset(DateTime.UtcNow.AddDays(2)),
-                    _uniSettings.ClientStateSecret, _uniSettings.NotificationUrl);
+                var _ = await _graphApiManager.AddSubscription(
+                    _uniSettings.ChangeType,
+                    _uniSettings.Resource,
+                    new DateTimeOffset(DateTime.UtcNow.AddDays(2)),
+                    _uniSettings.ClientStateSecret,
+                    _uniSettings.NotificationUrl
+                    );
+            }
+            //Diff between subscription datetime and now should be moved to configuration
+            else if (diffNotification == null || diffNotification.Value < 6)
+            {
+                _logger.LogInformation("Subscription {0} will expire on {1}: Renewing...", currentSubscription.Id, currentSubscription.ExpirationDateTime.Value.ToString());
+                await _graphApiManager.RenewSubscription(currentSubscription.Id);
             }
         }
 
@@ -358,7 +420,7 @@ namespace Proge.Teams.Edu.TeamsDashaborad
         /// </summary>
         /// <param name="receivedCallRecord">CallRecord to check.</param>
         /// <returns>True if the CallRecord must be saved, false if it must be discarded.</returns>
-        protected virtual async Task<bool> CallToSave(Beta.CallRecords.CallRecord receivedCallRecord)
+        protected virtual async Task<bool> CallToSave(Microsoft.Graph.CallRecords.CallRecord receivedCallRecord)
         {
             bool saveCall = true;
 
@@ -375,10 +437,10 @@ namespace Proge.Teams.Edu.TeamsDashaborad
                 // CallType filter
                 if (saveCall && !string.IsNullOrWhiteSpace(callFilters.CallType))
                 {
-                    Beta.CallRecords.CallType filterCallType = Beta.CallRecords.CallType.Unknown;
-                    if (Enum.TryParse<Beta.CallRecords.CallType>(callFilters.CallType.Trim(), out filterCallType))
+                    Microsoft.Graph.CallRecords.CallType filterCallType = Microsoft.Graph.CallRecords.CallType.Unknown;
+                    if (Enum.TryParse<Microsoft.Graph.CallRecords.CallType>(callFilters.CallType.Trim(), out filterCallType))
                     {
-                        if (receivedCallRecord.Type.HasValue)
+                        if (receivedCallRecord != null && receivedCallRecord.Type.HasValue)
                             saveCall = receivedCallRecord.Type.Value.ToString().ToUpper() == callFilters.CallType.Trim().ToUpper();
                         else
                             throw new Exception($"Missing CallType value in received CallRecord: impossible to filter on this field.");
@@ -402,66 +464,68 @@ namespace Proge.Teams.Edu.TeamsDashaborad
                 // NameNeededInTeamsMeetingTable filter: if true, check if the meeting exist in the TeamsMeeting table before to save
                 if (saveCall && callFilters.NameNeededInTeamsMeetingTable)
                 {
-                    TeamsMeeting teamsMeeting = await _callRecordRepo.GetTeamsMeetingByJoinUrl(receivedCallRecord.JoinWebUrl);
-                    saveCall = teamsMeeting != null && !string.IsNullOrWhiteSpace(teamsMeeting.MeetingName);
+                    var meetingName = await _callRecordRepo.GetTeamsMeetingNameByJoinUrl(receivedCallRecord.JoinWebUrl);
+                    saveCall = !string.IsNullOrWhiteSpace(meetingName);
                 }
 
             }
             catch (Exception ex)
             {
-                _logger.LogError($"ProcessNotification - error applying filters: { ex.Message }");
+                _logger.LogError(ex, "ProcessNotification - error applying filters");
                 return false;
             }
 
             return saveCall;
         }
 
-        protected virtual async Task<DalCallRecord> MapReceivedCallRecord(Beta.CallRecords.CallRecord receivedCallRecord)
+        protected virtual async Task<DalCallRecord> MapReceivedCallRecord(Microsoft.Graph.CallRecords.CallRecord receivedCallRecord)
         {
             Guid callId = Guid.Parse(receivedCallRecord.Id);
 
             // Team Description
-            string mappedDescription = string.Empty;
-            TeamsMeeting teamsMeeting = await _callRecordRepo.GetTeamsMeetingByJoinUrl(receivedCallRecord.JoinWebUrl);
-            if (teamsMeeting != null)
-            {
-                mappedDescription = teamsMeeting.MeetingId;
-            }
-
+            DAL.Entities.TeamsMeeting teamsMeeting = await _callRecordRepo.GetTeamsMeetingByJoinUrl(receivedCallRecord.JoinWebUrl);
+            string mappedDescription = teamsMeeting?.MeetingId ?? string.Empty;
 
             // Modalities
             string mappedModalities = string.Empty;
             foreach (var modality in receivedCallRecord.Modalities)
             {
-                mappedModalities += $"{modality.ToString()},";
+                mappedModalities += $"{modality},";
             }
             mappedModalities = mappedModalities.Substring(0, mappedModalities.Length - 1);
 
             // Users
-            List<CallUser> mappedUsers = new List<CallUser>();
+            List<DAL.Entities.CallUser> mappedUsers = new List<DAL.Entities.CallUser>();
+
             // Users - Organizer
-            if (receivedCallRecord.Organizer.User != null && receivedCallRecord.Organizer.User.DisplayName != null)
+            if (receivedCallRecord?.Organizer?.User != null
+                && Guid.TryParse(receivedCallRecord.Organizer.User.Id, out Guid GraphUserId)
+                && !string.IsNullOrWhiteSpace(receivedCallRecord.Organizer.User.DisplayName))
             {
-                CallUser mappedOrganizer = MapReceivedUser(callId, receivedCallRecord.Organizer.User, UserRole.Organizer);
+                DAL.Entities.CallUser mappedOrganizer = MapReceivedUser(callId, receivedCallRecord.Organizer.User, DAL.Entities.UserRole.Organizer);
                 mappedUsers.Add(mappedOrganizer);
             }
+
             // Users - Participants            
             foreach (var receivedParticipant in receivedCallRecord.Participants)
             {
                 //UserRole role = (receivedParticipant.User.Id == receivedCallRecord.Organizer.User.Id) ? UserRole.Organizer : UserRole.Participant;
-                if (receivedParticipant.User != null && !string.IsNullOrEmpty(receivedParticipant.User.DisplayName))
+                if (!string.IsNullOrEmpty(receivedParticipant?.User?.DisplayName)
+                    && Guid.TryParse(receivedParticipant.User.Id, out GraphUserId))
                 {
                     mappedUsers.Add(MapReceivedUser(callId, receivedParticipant.User, DAL.Entities.UserRole.Participant));
                 }
             }
 
             // Sessions with segments
-            List<CallSession> mappedSessions = new List<CallSession>();
-            ICollection<Beta.CallRecords.Session> receivedSessions = await BuildReceivedSessionList(receivedCallRecord);
-            foreach (var receivedSession in receivedSessions)
-            {
-                mappedSessions.Add(await MapReceivedSession(callId, receivedSession));
-            }
+            IEnumerable<Microsoft.Graph.CallRecords.Session> receivedSessions = await _graphApiManager.GetCallSessions(receivedCallRecord);
+            ICollection<DAL.Entities.CallSession> mappedSessions = receivedSessions
+                .Select(async r => await MapReceivedSession(callId, r))
+                .Select(t => t.Result)
+                .Where(x => x != null)
+                .ToArray();
+
+            _logger.LogInformation("Call {0} has {1} mapped sessions", callId, mappedSessions.Count);
 
             DalCallRecord mappedCallRec = new DalCallRecord()
             {
@@ -473,113 +537,106 @@ namespace Proge.Teams.Edu.TeamsDashaborad
                 EndDateTime = receivedCallRecord.EndDateTime,
                 Modalities = mappedModalities,
                 CallUsers = mappedUsers,
-                CallSessions = mappedSessions
+                CallSessions = mappedSessions,
             };
 
             return mappedCallRec;
         }
 
-        protected virtual CallUser MapReceivedUser(Guid callId, Beta.Identity receivedUser, DAL.Entities.UserRole userType)
+        protected virtual DAL.Entities.CallUser MapReceivedUser(Guid callId, Microsoft.Graph.Identity receivedUser, DAL.Entities.UserRole userType)
         {
-            CallUser mappedCallUser = new CallUser();
-
-            mappedCallUser.Id = Guid.Parse(receivedUser.Id);
-            mappedCallUser.CallRecordId = callId;
-            mappedCallUser.UserRole = userType;
-            mappedCallUser.DisplayName = receivedUser.DisplayName;
-
-            if (receivedUser.AdditionalData["tenantId"] != null)
+            try
             {
-                mappedCallUser.UserTenantId = string.IsNullOrWhiteSpace(receivedUser.AdditionalData["tenantId"].ToString()) ? new Nullable<Guid>() : Guid.Parse(receivedUser.AdditionalData["tenantId"].ToString());
-            }
+                DAL.Entities.CallUser mappedCallUser = new DAL.Entities.CallUser
+                {
+                    Id = Guid.Parse(receivedUser.Id),
+                    CallRecordId = callId,
+                    UserRole = userType,
+                    DisplayName = receivedUser.DisplayName,
+                };
 
-            return mappedCallUser;
+                string tenantIdStr = receivedUser.AdditionalData["tenantId"].ToString();
+                if (Guid.TryParse(tenantIdStr, out Guid tenantId))
+                    mappedCallUser.UserTenantId = tenantId;
+
+                return mappedCallUser;
+            }
+            catch (Exception e)
+            {
+                _logger.LogError(e, "Error mapping user {0}", JsonConvert.SerializeObject(receivedUser));
+                return null;
+            }
         }
 
-        protected virtual async Task<CallSession> MapReceivedSession(Guid callId, Beta.CallRecords.Session receivedSession)
+        protected virtual async Task<DAL.Entities.CallSession> MapReceivedSession(Guid callId, Microsoft.Graph.CallRecords.Session receivedSession)
         {
-            CallSession mappedSession = new CallSession()
+            if (!Guid.TryParse(receivedSession.Id, out Guid rId))
             {
-                Id = Guid.Parse(receivedSession.Id),
+                _logger.LogInformation("Can not map Session: invalid session Id ({0}) for call {1}", receivedSession.Id, callId);
+                return null;
+            }
+
+            var caller = receivedSession.Caller as Microsoft.Graph.CallRecords.ParticipantEndpoint;
+            var user = caller?.Identity?.User;
+            if (!Guid.TryParse(user?.Id, out Guid callUserId))
+            {
+                _logger.LogInformation("Skipping session {0} because callUserId is not a valid GUID: {1}", rId, user?.Id);
+                return null;
+            }
+
+            var userAgent = caller.UserAgent as Microsoft.Graph.CallRecords.ClientUserAgent;
+            DAL.Entities.CallSession mappedSession = new DAL.Entities.CallSession
+            {
+                Id = rId,
                 CallRecordId = callId,
                 StartDateTime = receivedSession.StartDateTime,
-                EndDateTime = receivedSession.EndDateTime
+                EndDateTime = receivedSession.EndDateTime,
+                UserPlatform = userAgent?.Platform.Value.ToString() ?? "N/A",
+                UserProductFamily = userAgent?.ProductFamily.Value.ToString() ?? "N/A",
+                CallUserId = callUserId,
+                CallUserRole = DAL.Entities.UserRole.Participant,
             };
 
-            mappedSession.UserPlatform = ((Beta.CallRecords.ClientUserAgent)((Beta.CallRecords.ParticipantEndpoint)receivedSession.Caller).UserAgent).Platform.Value.ToString();
-            mappedSession.UserProductFamily = ((Beta.CallRecords.ClientUserAgent)((Beta.CallRecords.ParticipantEndpoint)receivedSession.Caller).UserAgent).ProductFamily.Value.ToString();
-            if (((Beta.CallRecords.ParticipantEndpoint)receivedSession.Caller).Identity.User != null)
-            {
-                mappedSession.CallUserId = Guid.Parse(((Beta.CallRecords.ParticipantEndpoint)receivedSession.Caller).Identity.User.Id);
-            }
-            mappedSession.CallUserRole = UserRole.Participant;
-
             // Session Segments
-            List<CallSegment> mappedSegments = new List<CallSegment>();
-            ICollection<Beta.CallRecords.Segment> receivedSegments = await BuildReceivedSegmentList(receivedSession);
-            foreach (var receivedSegment in receivedSegments)
-            {
-                mappedSegments.Add(MapReceivedSegment(callId, mappedSession.Id, receivedSegment));
-            }
-            mappedSession.CallSegments = mappedSegments;
+            IEnumerable<Microsoft.Graph.CallRecords.Segment> receivedSegments = await _graphApiManager.GetCallSegment(receivedSession);
+            mappedSession.CallSegments = receivedSegments
+                .Select(r => MapReceivedSegment(callId, mappedSession.Id, r))
+                .Where(x => x != null)
+                .ToArray();
 
             return mappedSession;
         }
 
-        protected virtual CallSegment MapReceivedSegment(Guid callId, Guid sessionId, Beta.CallRecords.Segment receivedSegment)
+        protected virtual DAL.Entities.CallSegment MapReceivedSegment(Guid callId, Guid sessionId, Microsoft.Graph.CallRecords.Segment receivedSegment)
         {
-            CallSegment mappedSegment = new CallSegment()
+            if (!Guid.TryParse(receivedSegment.Id, out Guid id))
             {
-                Id = Guid.Parse(receivedSegment.Id),
+                _logger.LogWarning("Can not map segment because of invalid/null GUID id ({0}) for call {1}", receivedSegment.Id, callId);
+                return null;
+            }
+
+            var caller = receivedSegment.Caller as Microsoft.Graph.CallRecords.ParticipantEndpoint;
+            var user = caller?.Identity?.User;
+            if (!Guid.TryParse(user?.Id, out Guid userId))
+            {
+                _logger.LogWarning("Skipping segment {0} because callUserId is not a valid GUID: {1}", id, user?.Id);
+                return null;
+            }
+
+            var userAgent = caller.UserAgent as Microsoft.Graph.CallRecords.ClientUserAgent;
+            DAL.Entities.CallSegment mappedSegment = new DAL.Entities.CallSegment
+            {
+                Id = id,
                 CallSessionId = sessionId,
                 StartDateTime = receivedSegment.StartDateTime,
-                EndDateTime = receivedSegment.EndDateTime
+                EndDateTime = receivedSegment.EndDateTime,
+                UserPlatform = userAgent?.Platform.Value.ToString() ?? "N/A",
+                UserProductFamily = userAgent?.ProductFamily.Value.ToString() ?? "N/A",
+                CallUserRole = DAL.Entities.UserRole.Participant,
+                CallUserId = userId,
             };
-
-            mappedSegment.UserPlatform = ((Beta.CallRecords.ClientUserAgent)((Beta.CallRecords.ParticipantEndpoint)receivedSegment.Caller).UserAgent).Platform.Value.ToString();
-            mappedSegment.UserProductFamily = ((Beta.CallRecords.ClientUserAgent)((Beta.CallRecords.ParticipantEndpoint)receivedSegment.Caller).UserAgent).ProductFamily.Value.ToString();
-            if (((Beta.CallRecords.ParticipantEndpoint)receivedSegment.Caller).Identity.User != null)
-            {
-                mappedSegment.CallUserId = Guid.Parse(((Beta.CallRecords.ParticipantEndpoint)receivedSegment.Caller).Identity.User.Id);
-            }
-            mappedSegment.CallUserRole = UserRole.Participant;
 
             return mappedSegment;
         }
-
-        private async Task<ICollection<Beta.CallRecords.Session>> BuildReceivedSessionList(Beta.CallRecords.CallRecord receivedCallRecord)
-        {
-            List<Beta.CallRecords.Session> sessionList = new List<Beta.CallRecords.Session>();
-
-            Beta.CallRecords.ICallRecordSessionsCollectionPage sessionCollectionPage = receivedCallRecord.Sessions;
-            sessionList.AddRange(sessionCollectionPage);
-            Beta.CallRecords.ICallRecordSessionsCollectionRequest sessionCollectionRequest = sessionCollectionPage.NextPageRequest;
-            while (sessionCollectionRequest != null)
-            {
-                Beta.CallRecords.ICallRecordSessionsCollectionPage sessionCollectionNextPage = await sessionCollectionRequest.GetAsync();
-                sessionList.AddRange(sessionCollectionNextPage);
-                sessionCollectionRequest = sessionCollectionNextPage.NextPageRequest;
-            }
-
-            return sessionList;
-        }
-
-        protected virtual async Task<ICollection<Beta.CallRecords.Segment>> BuildReceivedSegmentList(Beta.CallRecords.Session receivedSession)
-        {
-            List<Beta.CallRecords.Segment> segmentList = new List<Beta.CallRecords.Segment>();
-
-            Beta.CallRecords.ISessionSegmentsCollectionPage segmentCollectionPage = receivedSession.Segments;
-            segmentList.AddRange(segmentCollectionPage);
-            Beta.CallRecords.ISessionSegmentsCollectionRequest segmentCollectionRequest = segmentCollectionPage.NextPageRequest;
-            while (segmentCollectionRequest != null)
-            {
-                Beta.CallRecords.ISessionSegmentsCollectionPage segmentCollectionNextPage = await segmentCollectionRequest.GetAsync();
-                segmentList.AddRange(segmentCollectionNextPage);
-                segmentCollectionRequest = segmentCollectionNextPage.NextPageRequest;
-            }
-
-            return segmentList;
-        }
-
     }
 }

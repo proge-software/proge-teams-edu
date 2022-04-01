@@ -1,17 +1,26 @@
-﻿using System.Threading.Channels;
+﻿using System.Threading;
+using System.Threading.Channels;
 using System.Threading.Tasks;
 
 namespace Proge.Teams.Edu.Abstraction
 {
     public interface IJobChannel : IJobChannelReader, IJobChannelWriter { }
 
-    public interface IJobChannelReader
+    public interface IJobChannelReader<T>
     {
-        Task Read(ChannelWriter<IEducationalClassTeam> chan);
+        Task Read(ChannelWriter<T> chan, CancellationToken cancellationToken = default);
     }
 
-    public interface IJobChannelWriter
+    public interface IJobChannelReader : IJobChannelReader<IEducationalClassTeam>
     {
-        Task Write(ChannelReader<IEducationalClassTeam> insegnamenti);
+    }
+
+    public interface IJobChannelWriter<T>
+    {
+        Task Write(ChannelReader<T> insegnamenti, CancellationToken cancellationToken = default);
+    }
+
+    public interface IJobChannelWriter : IJobChannelWriter<IEducationalClassTeam>
+    {
     }
 }

@@ -37,9 +37,7 @@ namespace Proge.Teams.Edu.DAL
             var builder = new ConfigurationBuilder()
                 .SetBasePath(basePath)
                 .AddJsonFile("appsettings.json")
-                .AddJsonFile($"appsettings.{environmentName}.json", true)
                 .AddJsonFile($"appsettings.local.json", true)
-                .AddJsonFile($"appsettings.release.json", true)
                 ;
 
             var config = builder.Build();
@@ -47,11 +45,11 @@ namespace Proge.Teams.Edu.DAL
 
             if (String.IsNullOrWhiteSpace(connstr))
             {
-                throw new InvalidOperationException("Could not find a connection string named 'default'.");
+                throw new InvalidOperationException("Could not find a connection string named 'DefaultConnection'.");
             }
             else
             {
-                return Create(connstr);
+                return Create(connstr, migrationAssembly);
             }
         }
 
@@ -63,7 +61,7 @@ namespace Proge.Teams.Edu.DAL
             }
 
             var optionsBuilder = new DbContextOptionsBuilder<TContext>();            
-            System.Console.WriteLine("MyDesignTimeDbContextFactory.Create(string): Connection string: {0}", connectionString);
+            Console.WriteLine("MyDesignTimeDbContextFactory.Create(string): Connection string: {0}", connectionString);
             optionsBuilder.UseSqlServer(connectionString, opt => {
                 opt.CommandTimeout((int)TimeSpan.FromMinutes(10).TotalSeconds);
                 opt.MigrationsAssembly(migrationAssembly);
